@@ -152,7 +152,7 @@ def convert_type(pg_type, ili_type, extra):
     elif ili_type == "GEOMETRY":
         for k,v in GEOMETRY_TYPES.items():
             if t.lower().startswith(k):
-                res = "{}.{}".format(GEOMETRY_MODEL_NAME, v["3d"] if PREFER_3D else v["3d"])
+                res = "{}.{}".format(GEOMETRY_MODEL_NAME, v["3d"] if PREFER_3D else v["2d"])
                 break
     else:
         res = ili_type
