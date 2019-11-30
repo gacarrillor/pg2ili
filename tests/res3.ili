@@ -1,0 +1,640 @@
+INTERLIS 2.3;
+
+MODEL My_Model (en)
+AT "mailto:gcarrillo@linuxmail.org"
+VERSION "2019-10-11"  =
+
+  TOPIC My_Topic =
+  
+    CLASS clima =
+      id : MANDATORY 0 .. 9999999999;
+      nombre : MANDATORY TEXT*100;
+    END clima;
+
+    CLASS fase_cartografica =
+      id : MANDATORY 0 .. 9999999999;
+      simbolo : MANDATORY TEXT*8;
+      id_pendiente : MANDATORY 0 .. 9999999999;
+      id_pedregosidad : 0 .. 9999999999;
+      id_salinidad : 0 .. 9999999999;
+      id_erosion : 0 .. 9999999999;
+      id_inundabilidad : 0 .. 9999999999;
+      id_unidad_cartografica : MANDATORY 0 .. 9999999999;
+      frag_sup : MANDATORY 0 .. 9999999999;
+      frag_suelo : MANDATORY 0 .. 9999999999;
+      capacidad : MANDATORY TEXT*50;
+      vocacion : MANDATORY TEXT*50;
+    END fase_cartografica;
+
+    CLASS perfil_simple =
+      id : MANDATORY 0 .. 9999999999;
+      codigo : MANDATORY TEXT*10;
+      id_unidad_cartografica : MANDATORY 0 .. 9999999999;
+      codigo_nuevo : MANDATORY TEXT*10;
+      frag_suelo : MANDATORY 0.00 .. 9999999999.99;
+      frag_sup : MANDATORY 0.00 .. 9999999999.99;
+    END perfil_simple;
+
+    CLASS taxonomia =
+      id : MANDATORY 0 .. 9999999999;
+      p_representacion : MANDATORY 0.00 .. 9999999999.99;
+      nombre : MANDATORY TEXT*70;
+      id_profundidad_efectiva : 0 .. 9999999999;
+      id_drenaje_natural : 0 .. 9999999999;
+      id_fertilidad : 0 .. 9999999999;
+      id_unidad_cartografica : MANDATORY 0 .. 9999999999;
+      id_perfil : MANDATORY 0 .. 9999999999;
+      id_limitante_profundidad : 0 .. 9999999999;
+    END taxonomia;
+
+    CLASS unidad_cartografica =
+      id : MANDATORY 0 .. 9999999999;
+      sigla : MANDATORY TEXT*15;
+      nombre : MANDATORY TEXT*100;
+      paisaje : MANDATORY TEXT*150;
+      mat_parental : MANDATORY TEXT*150;
+      localizacion : MANDATORY TEXT*150;
+      id_clima : MANDATORY 0 .. 9999999999;
+      fuente : TEXT*250;
+      simbolo_antiguo : TEXT*15;
+      simbolo : MANDATORY TEXT*6;
+      estudio : TEXT*200;
+    END unidad_cartografica;
+
+    CLASS amazonas =
+      gid : MANDATORY 0 .. 9999999999;
+      ucsuelo : TEXT*10;
+      s_uc : TEXT*254;
+      s_uc_fase : TEXT*254;
+      otras_fa_1 : TEXT*254;
+      pendient_1 : TEXT*254;
+      erosion_1 : TEXT*254;
+      s_clima : TEXT*254;
+      clima_1 : TEXT*254;
+      s_paisaje : TEXT*254;
+      paisaje_gp : TEXT*254;
+      tipo_relie : TEXT*254;
+      material_p : TEXT*254;
+      subgrupo : TEXT*254;
+      perfiles_gp : TEXT*254;
+      porcentaje : TEXT*254;
+      geom : ISO19107_PLANAS_V1.GM_MultiSurface3D;
+    END amazonas;
+
+    CLASS aptitud =
+      id_fase : 0 .. 9999999999;
+      sim_nuevo : TEXT*15;
+      sim_anti : TEXT*15;
+      fase : TEXT*8;
+      id_cultivo : 0 .. 9999999999;
+      nombre : TEXT*58;
+      tipo : TEXT*21;
+      localizacion : TEXT*150;
+    END aptitud;
+
+    CLASS drenaje_natural =
+      id : MANDATORY 0 .. 9999999999;
+      codigo : MANDATORY 0 .. 9999999999;
+      descripcion : MANDATORY TEXT*50;
+      drenaje_vocacion : MANDATORY 0 .. 9999999999;
+    END drenaje_natural;
+
+    CLASS horizonte =
+      id : MANDATORY 0 .. 9999999999;
+      nombre : MANDATORY TEXT*8;
+      id_perfil : MANDATORY 0 .. 9999999999;
+      id_textura : 0 .. 9999999999;
+      id_estructura : 0 .. 9999999999;
+      id_color : 0 .. 9999999999;
+      ph : 0.00 .. 9999999999.99;
+      cic : 0.00 .. 9999999999.99;
+      bt : 0.00 .. 9999999999.99;
+      sb : 0.00 .. 9999999999.99;
+      co : 0.00 .. 9999999999.99;
+      nt : 0.00 .. 9999999999.99;
+      pp : 0.00 .. 9999999999.99;
+      kc : 0.00 .. 9999999999.99;
+      ce : 0.00 .. 9999999999.99;
+      profundidad_inicial : MANDATORY 0 .. 9999999999;
+      profundidad_final : MANDATORY 0 .. 9999999999;
+      sat_al : 0.00 .. 9999999999.99;
+      id_unidad_cartografica : MANDATORY 0 .. 9999999999;
+      nombre_corregido : TEXT*8;
+      sat_sodio : 0.00 .. 9999999999.99;
+    END horizonte;
+
+    CLASS pendiente =
+      id : MANDATORY 0 .. 9999999999;
+      letra : MANDATORY TEXT*1;
+      lim_inf : MANDATORY 0 .. 9999999999;
+      lim_sup : MANDATORY 0 .. 9999999999;
+      descripcion : MANDATORY TEXT*10;
+      valor_medio : MANDATORY 0 .. 9999999999;
+    END pendiente;
+
+    CLASS profundidad_efectiva =
+      id : MANDATORY 0 .. 9999999999;
+      codigo : MANDATORY 0 .. 9999999999;
+      descripcion : MANDATORY TEXT*50;
+      valor_medio : MANDATORY 0 .. 9999999999;
+    END profundidad_efectiva;
+
+    CLASS capacidad =
+      id : MANDATORY 0 .. 9999999999;
+      id_unidad_cartografica : MANDATORY 0 .. 9999999999;
+      id_fase_cartografica : MANDATORY 0 .. 9999999999;
+      capacidad : MANDATORY TEXT*7;
+      descripcion : MANDATORY TEXT*300;
+    END capacidad;
+
+    CLASS cartografia =
+      depto : MANDATORY TEXT*40;
+      sim_anti : MANDATORY TEXT*8;
+      capacidad : MANDATORY TEXT*15;
+      c_sim_anti : TEXT*20;
+      c_s_nuevo : TEXT*15;
+      depto_dos : TEXT*30;
+    END cartografia;
+
+    CLASS clase_agrologica =
+      id : MANDATORY 0 .. 9999999999;
+      nombre : MANDATORY TEXT*120;
+    END clase_agrologica;
+
+    CLASS color =
+      id : MANDATORY 0 .. 9999999999;
+      cod_munsel : MANDATORY TEXT*15;
+      nombre : MANDATORY TEXT*50;
+    END color;
+
+    CLASS erosion =
+      id : MANDATORY 0 .. 9999999999;
+      codigo : MANDATORY 0 .. 9999999999;
+      descripcion : MANDATORY TEXT*12;
+      codigo_vocacion : 0 .. 9999999999;
+    END erosion;
+
+    CLASS fertilidad =
+      id : MANDATORY 0 .. 9999999999;
+      codigo : MANDATORY 0 .. 9999999999;
+      descripcion : MANDATORY TEXT*50;
+      lim_sup : MANDATORY 0.00 .. 9999999999.99;
+      valor_medio : MANDATORY 0.00 .. 9999999999.99;
+    END fertilidad;
+
+    CLASS inundabilidad =
+      id : MANDATORY 0 .. 9999999999;
+      codigo : MANDATORY TEXT*1;
+      explicacion : MANDATORY TEXT*40;
+      clases : MANDATORY TEXT*40;
+    END inundabilidad;
+
+    CLASS textura =
+      id : MANDATORY 0 .. 9999999999;
+      simbolo : MANDATORY TEXT*4;
+      descripcion : MANDATORY TEXT*30;
+    END textura;
+
+    CLASS descripcion_observacion =
+      id : MANDATORY 0 .. 9999999999;
+      dia : MANDATORY 0 .. 9999999999;
+      mes : MANDATORY 0 .. 9999999999;
+      anio : MANDATORY 0 .. 9999999999;
+      tipo_observacion : MANDATORY 0 .. 9999999999;
+      numero_observacion : MANDATORY TEXT*10;
+      id_descriptor : MANDATORY 0 .. 9999999999;
+      sitio : TEXT*100;
+      altitud : MANDATORY 0 .. 9999999999;
+      aerofotografia : MANDATORY TEXT*100;
+      faja : TEXT*100;
+      id_paisaje : MANDATORY 0 .. 9999999999;
+      id_tipo_relieve : MANDATORY 0 .. 9999999999;
+      id_f_terreno : MANDATORY 0 .. 9999999999;
+      id_mat_parental : MANDATORY 0 .. 9999999999;
+      relieve : MANDATORY TEXT*100;
+      diseccion : MANDATORY TEXT*100;
+      microrelieve : MANDATORY TEXT*100;
+      gradiente_pendiente : MANDATORY TEXT*100;
+      longitud_pendiente : MANDATORY TEXT*100;
+      forma_pendiente : MANDATORY TEXT*100;
+      id_clima : MANDATORY 0 .. 9999999999;
+      formacion_ecologica : MANDATORY TEXT*100;
+      regimen_temperatura : MANDATORY TEXT*100;
+      regimen_humedad : MANDATORY TEXT*100;
+      clase_erosion : TEXT*100;
+      tipo_erosion : TEXT*100;
+      grado_frecuencia_erosion : TEXT*100;
+      evidencia_erosion : TEXT*100;
+      clase_afloramiento_rocoso : TEXT*100;
+      p_superficie_cubierta : 0 .. 9999999999;
+      drenaje_interno : 0 .. 9999999999;
+      drenaje_externo : 0 .. 9999999999;
+      drenaje_natural : 0 .. 9999999999;
+      id_unidad_cartografica_medicion : MANDATORY 0 .. 9999999999;
+      taxonomia : MANDATORY TEXT*100;
+      h_superficial : TEXT*100;
+      h_subsuperficial : TEXT*100;
+      otras_caracteristicas : TEXT*255;
+      id_inundacion : MANDATORY 0 .. 9999999999;
+      duracion_inundacion : TEXT*100;
+      id_encharcamiento : MANDATORY 0 .. 9999999999;
+      duracion_encharcamiento : TEXT*100;
+      naturaleza_nivel_freatico : TEXT*100;
+      profundidad : 0 .. 9999999999;
+      id_profundidad_efectiva : MANDATORY 0 .. 9999999999;
+      id_limitante_profundidad_efectiva : MANDATORY 0 .. 9999999999;
+      factor_limitante_profundidad : TEXT*100;
+      vegetacion_natural : TEXT*100;
+      uso_actual : TEXT*100;
+      limitante_uso : TEXT*100;
+      nombre_cultivos_pastos : TEXT*255;
+      ancho_gritas : 0 .. 9999999999;
+      profundidad_gritas : 0 .. 9999999999;
+      volumen_plintita : 0 .. 9999999999;
+      fase_plintita : 0 .. 9999999999;
+      evidencias_sales : TEXT*255;
+      observaciones : TEXT*255;
+      id_tipo_observacion : MANDATORY 0 .. 9999999999;
+      aux : TEXT*255;
+    END descripcion_observacion;
+
+    CLASS descripcion_perfil =
+      id : MANDATORY 0 .. 9999999999;
+      perfil : MANDATORY TEXT*10;
+      descripcion : MANDATORY TEXT*255;
+      fertilidad : 0.00 .. 9999999999.99;
+    END descripcion_perfil;
+
+    CLASS descriptor =
+      id : MANDATORY 0 .. 9999999999;
+      nombre : MANDATORY TEXT*120;
+      otra_info : TEXT*255;
+    END descriptor;
+
+    CLASS encharcamiento =
+      id : MANDATORY 0 .. 9999999999;
+      nombre : MANDATORY TEXT*120;
+    END encharcamiento;
+
+    CLASS estructura =
+      id : MANDATORY 0 .. 9999999999;
+      codigo : MANDATORY 0 .. 9999999999;
+      descripcion : MANDATORY TEXT*100;
+    END estructura;
+
+    CLASS forma_terreno =
+      id : MANDATORY 0 .. 9999999999;
+      nombre : MANDATORY TEXT*120;
+    END forma_terreno;
+
+    CLASS fuente =
+      id : MANDATORY 0 .. 9999999999;
+      descripcion : MANDATORY TEXT*255;
+      fecha : MANDATORY INTERLIS.XMLDate;
+    END fuente;
+
+    CLASS gp_antioquia =
+      gid : MANDATORY 0 .. 9999999999;
+      ucsuelo : TEXT*10;
+      s_uc : TEXT*254;
+      s_uc_fase : TEXT*254;
+      otras_fa_1 : TEXT*254;
+      pendient_1 : TEXT*254;
+      erosion_1 : TEXT*254;
+      s_clima : TEXT*254;
+      clima_1 : TEXT*254;
+      s_paisaje : TEXT*254;
+      paisaje : TEXT*254;
+      tipo_relie : TEXT*254;
+      material_p : TEXT*254;
+      subgrupo : TEXT*254;
+      perfiles : TEXT*254;
+      porcentaje : TEXT*254;
+      geom : ISO19107_PLANAS_V1.GM_MultiSurface3D;
+    END gp_antioquia;
+
+    CLASS inundacion =
+      id : MANDATORY 0 .. 9999999999;
+      nombre : MANDATORY TEXT*120;
+    END inundacion;
+
+    CLASS letra_horizonte =
+      id : MANDATORY 0 .. 9999999999;
+      letra : MANDATORY TEXT*3;
+    END letra_horizonte;
+
+    CLASS leyenda_ini_ =
+      paisaje : TEXT*150;
+      clima : TEXT*100;
+      mat_parental : TEXT*150;
+      taxonomia : TEXT*70;
+      perfil : TEXT*10;
+      p_representacion : 0.00 .. 9999999999.99;
+      sim_nuevo : TEXT*15;
+      simbolo_antiguo : TEXT*15;
+      id_tax : 0 .. 9999999999;
+      id_fase : 0 .. 9999999999;
+      id_perfil : 0 .. 9999999999;
+      fase : TEXT*8;
+      localizacion : TEXT*150;
+      id : 0 .. 9999999999;
+      nombre : TEXT*100;
+      fuente : TEXT*250;
+      id_l : MANDATORY 0 .. 9999999999;
+    END leyenda_ini_;
+
+    CLASS leyenda_nueva =
+      id : MANDATORY 0 .. 9999999999;
+      paisaje : TEXT*150;
+      clima : TEXT*100;
+      mat_parental : TEXT*150;
+      taxonomia : TEXT*255;
+      perfiles : TEXT*255;
+      porcentajes : TEXT*255;
+      sim_nuevo : TEXT*15;
+      simbolo_antiguo : TEXT*15;
+      ids_taxonomias : TEXT*255;
+      ids_fases : TEXT*255;
+      ids_perfiles : TEXT*255;
+      fases : TEXT*255;
+      localizacion : TEXT*150;
+      nombre : TEXT*100;
+      fuente : TEXT*250;
+    END leyenda_nueva;
+
+    CLASS limitante_profundidad =
+      id : MANDATORY 0 .. 9999999999;
+      codigo : MANDATORY 0 .. 9999999999;
+      descripcion : MANDATORY TEXT*70;
+    END limitante_profundidad;
+
+    CLASS localizacion =
+      id : MANDATORY 0 .. 9999999999;
+    END localizacion;
+
+    CLASS material_parental =
+      id : MANDATORY 0 .. 9999999999;
+      nombre : MANDATORY TEXT*120;
+    END material_parental;
+
+    CLASS nomenclatura =
+      id : MANDATORY 0 .. 9999999999;
+      nombre : MANDATORY TEXT*5;
+      descripcion : TEXT*120;
+    END nomenclatura;
+
+    CLASS observacion =
+      id : MANDATORY 0 .. 9999999999;
+      prof_inicial : MANDATORY 0 .. 9999999999;
+      prof_final : MANDATORY 0 .. 9999999999;
+      id_nomenclatura : MANDATORY 0 .. 9999999999;
+      id_color : MANDATORY 0 .. 9999999999;
+      texto : TEXT*120;
+      tipo_fragmentos_roca : TEXT*120;
+      forma_fragmentos_roca : TEXT*120;
+      estructura_fragmentos_roca : TEXT*120;
+      tipo_estructura : TEXT*120;
+      clase_estructura : TEXT*120;
+      grado_estructura : TEXT*120;
+      superficie_peds : 0 .. 9999999999;
+      clase_concentraciones : TEXT*120;
+      campos_concentraciones : TEXT*120;
+      consistencia_seco : TEXT*120;
+      consistencia_humedo : TEXT*120;
+      consistencia_mojado : TEXT*120;
+      reaccion_hcl : TEXT*120;
+      reaccion_naf : TEXT*120;
+      reaccion_ph : TEXT*120;
+      id_descripcion_observacion : MANDATORY 0 .. 9999999999;
+    END observacion;
+
+    CLASS paisaje =
+      id : MANDATORY 0 .. 9999999999;
+      nombre : MANDATORY TEXT*100;
+    END paisaje;
+
+    CLASS suelos_paramos =
+      id : MANDATORY 0 .. 9999999999;
+      sim_nuevo : MANDATORY TEXT*5;
+      fase : MANDATORY TEXT*5;
+    END suelos_paramos;
+
+    CLASS paso_ucs_perfil =
+      id : MANDATORY 0 .. 9999999999;
+      ucs_perfil : MANDATORY TEXT*15;
+      ucs : MANDATORY TEXT*5;
+      perfil : MANDATORY TEXT*6;
+      porcentaje : 0 .. 9999999999;
+      id_perfil : 0 .. 9999999999;
+      id_ucs : 0 .. 9999999999;
+    END paso_ucs_perfil;
+
+    CLASS pedregosidad =
+      id : MANDATORY 0 .. 9999999999;
+      descripcion : MANDATORY TEXT*2;
+      frag_sup : MANDATORY 0 .. 9999999999;
+      frag_suelo : MANDATORY 0 .. 9999999999;
+    END pedregosidad;
+
+    CLASS perfil =
+      id : MANDATORY 0 .. 9999999999;
+      codigo : TEXT*10;
+      ucs : TEXT*10;
+      clima : 0 .. 9999999999;
+      pendiente : 0 .. 9999999999;
+      erosion : 0 .. 9999999999;
+      drenaje : 0 .. 9999999999;
+      frag_suelo : 0 .. 9999999999;
+      frag_sup : 0 .. 9999999999;
+      inundacion : TEXT*20;
+      fertilidad : 0.00 .. 9999999999.99;
+      id_profundidad_efectiva : 0 .. 9999999999;
+      id_clase_inundacion : 0 .. 9999999999;
+      id_paso_ucs_perfil : 0 .. 9999999999;
+    END perfil;
+
+    CLASS quimica =
+      id : MANDATORY 0 .. 9999999999;
+      perfil : MANDATORY TEXT*10;
+      profundidades : MANDATORY TEXT*15;
+      simbolo : TEXT*20;
+      descripcion : TEXT*255;
+      arena : MANDATORY 0 .. 9999999999;
+      limo : MANDATORY 0 .. 9999999999;
+      arcilla : MANDATORY 0 .. 9999999999;
+      textura : TEXT*10;
+      ph : 0.00 .. 9999999999.99;
+      aluminio : 0.00 .. 9999999999.99;
+      saturacion_aluminio : 0.00 .. 9999999999.99;
+      fosforo_ppm : 0.00 .. 9999999999.99;
+      cica : 0.00 .. 9999999999.99;
+      cice : 0.00 .. 9999999999.99;
+      cicv : 0.00 .. 9999999999.99;
+      ca : 0.00 .. 9999999999.99;
+      mg : 0.00 .. 9999999999.99;
+      k : 0.00 .. 9999999999.99;
+      na : 0.00 .. 9999999999.99;
+      sba : 0.00 .. 9999999999.99;
+      co : 0.00 .. 9999999999.99;
+      mo : 0.00 .. 9999999999.99;
+    END quimica;
+
+    CLASS relieve =
+      id : MANDATORY 0 .. 9999999999;
+      nombre : MANDATORY TEXT*120;
+    END relieve;
+
+    CLASS salinidad =
+      id : MANDATORY 0 .. 9999999999;
+      codigo : MANDATORY 0 .. 9999999999;
+      descripcion : MANDATORY TEXT*50;
+    END salinidad;
+
+    CLASS unidad_omitida =
+      id : MANDATORY 0 .. 9999999999;
+      sim_nuevo : TEXT*15;
+      sim_anti : TEXT*15;
+      dpto : TEXT*60;
+    END unidad_omitida;
+
+    CLASS subclase_agrologica =
+      id : MANDATORY 0 .. 9999999999;
+      nombre : MANDATORY TEXT*120;
+    END subclase_agrologica;
+
+    CLASS suelo_completo_horizontes =
+      estudio : TEXT*255;
+      id : 0 .. 9999999999;
+      sim_nuevo : TEXT*255;
+      simbolo_antiguo : TEXT*255;
+      nombre : TEXT*255;
+      localizacion : TEXT*255;
+      paisaje : TEXT*255;
+      clima : TEXT*255;
+      btrim : TEXT*255;
+      fuente : TEXT*255;
+      taxonomia : TEXT*255;
+      perfil : TEXT*255;
+      p_representc : 0.00 .. 9999999999.99;
+      fase : TEXT*255;
+      profundidad : TEXT*255;
+      drenaje_natural : TEXT*255;
+      fertilidad : TEXT*255;
+      limitante_profundidad : TEXT*255;
+      pendiente : TEXT*255;
+      pedregosidad : TEXT*255;
+      salinidad : TEXT*255;
+      erosion : TEXT*255;
+      inundabilidad : TEXT*255;
+      horizonte : TEXT*255;
+      textura : TEXT*255;
+      prof_inicial : 0 .. 9999999999;
+      prof_final : 0 .. 9999999999;
+      estructura : TEXT*255;
+      color : TEXT*255;
+      ph : 0.00 .. 9999999999.99;
+      cic : 0.00 .. 9999999999.99;
+      bt : 0.00 .. 9999999999.99;
+      sb : 0.00 .. 9999999999.99;
+      co : 0.00 .. 9999999999.99;
+      nt : 0.00 .. 9999999999.99;
+      pp : 0.00 .. 9999999999.99;
+      kc : 0.00 .. 9999999999.99;
+      ce : 0.00 .. 9999999999.99;
+      sat_al : 0.00 .. 9999999999.99;
+    END suelo_completo_horizontes;
+
+    CLASS suelo_variables_fao =
+      id : 0 .. 9999999999;
+      sim_nuevo : TEXT*255;
+      sim_anti : TEXT*255;
+      nombre : TEXT*255;
+      localizacion : TEXT*255;
+      paisaje : TEXT*255;
+      clima : TEXT*255;
+      mat_parental : TEXT*255;
+      fuente : TEXT*255;
+      taxonomia : TEXT*255;
+      perfil : TEXT*255;
+      p_representacion : 0.00 .. 9999999999.99;
+      fase : TEXT*255;
+      profundidad : TEXT*50;
+      drenaje_natural : TEXT*50;
+      fertilidad : TEXT*50;
+      limitante_profundidad : TEXT*70;
+      pendiente : TEXT*10;
+      pedregosidad : TEXT*2;
+      salinidad : TEXT*50;
+      erosion : TEXT*12;
+      inundabilidad : TEXT*40;
+      horizonte : TEXT*8;
+      textura : TEXT*30;
+      profundidad_inicial : 0 .. 9999999999;
+      profundidad_final : 0 .. 9999999999;
+      estructura : TEXT*100;
+      color : TEXT*50;
+      ph : 0.00 .. 9999999999.99;
+      cic : 0.00 .. 9999999999.99;
+      bt : 0.00 .. 9999999999.99;
+      sb : 0.00 .. 9999999999.99;
+      co : 0.00 .. 9999999999.99;
+      nt : 0.00 .. 9999999999.99;
+      pp : 0.00 .. 9999999999.99;
+      kc : 0.00 .. 9999999999.99;
+      ce : 0.00 .. 9999999999.99;
+      sat_al : 0.00 .. 9999999999.99;
+    END suelo_variables_fao;
+
+    CLASS suelos_variables =
+      sim_nuevo : TEXT*15;
+      simbolo_antiguo : TEXT*15;
+      nombre : TEXT*100;
+      localizacion : TEXT*150;
+      paisaje : TEXT*150;
+      clima : TEXT*100;
+      mat_parental : TEXT*150;
+      fuente : TEXT*250;
+      taxonomia : TEXT*70;
+      perfiles : TEXT*255;
+      p_representc : TEXT*255;
+      fases : TEXT*255;
+      profundidad : TEXT*255;
+      drenaje_natural : TEXT*255;
+      fertilidad : TEXT*50;
+      limitante_profundidad : TEXT*70;
+      pendiente : TEXT*10;
+      pedregosidad : TEXT*2;
+      salinidad : TEXT*50;
+      erosion : TEXT*12;
+      inundabilidad : TEXT*40;
+      horizonte : TEXT*255;
+      textura : TEXT*255;
+      prof_inicial : TEXT*255;
+      prof_final : TEXT*255;
+      estructura : TEXT*255;
+      color : TEXT*255;
+      ph : TEXT*255;
+      cic : TEXT*255;
+      bt : TEXT*255;
+      sb : TEXT*255;
+      co : TEXT*255;
+      nt : TEXT*255;
+      pp : TEXT*255;
+      kc : TEXT*255;
+      ce : TEXT*255;
+      id : MANDATORY 0 .. 9999999999;
+    END suelos_variables;
+
+    CLASS tipo_observacion =
+      id : MANDATORY 0 .. 9999999999;
+      nombre : MANDATORY TEXT*120;
+    END tipo_observacion;
+
+    CLASS unidad_cartografica_medicion =
+      id : MANDATORY 0 .. 9999999999;
+      simbolo : MANDATORY TEXT*10;
+    END unidad_cartografica_medicion;
+
+  END My_Topic;
+  
+END My_Model.

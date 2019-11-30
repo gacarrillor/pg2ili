@@ -2,7 +2,8 @@
 
 CREATE TABLE clima (
     id integer NOT NULL,
-    nombre character(100) NOT NULL
+    nombre character(100) NOT NULL,
+    geometria geometry(Point, 3115) NOT NULL
 );
 
 

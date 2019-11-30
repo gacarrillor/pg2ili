@@ -1,0 +1,33 @@
+INTERLIS 2.3;
+
+MODEL My_Model (en)
+AT "mailto:gcarrillo@linuxmail.org"
+VERSION "2019-10-11"  =
+
+  TOPIC My_Topic =
+  
+    CLASS clima =
+      id : MANDATORY 0 .. 9999999999;
+      nombre : MANDATORY TEXT*100;
+      geometria : MANDATORY ISO19107_PLANAS_V1.GM_Point3D;
+    END clima;
+
+    CLASS fase_cartografica =
+      id : MANDATORY 0 .. 9999999999;
+      simbolo : MANDATORY TEXT*8;
+      id_pendiente : MANDATORY 0 .. 9999999999;
+      id_pedregosidad : 0 .. 9999999999;
+      id_salinidad : 0 .. 9999999999;
+      id_erosion : 0 .. 9999999999;
+      id_inundabilidad : 0 .. 9999999999;
+      id_unidad_cartografica : MANDATORY 0 .. 9999999999;
+      frag_sup : MANDATORY 0 .. 9999999999;
+      frag_suelo : MANDATORY 0 .. 9999999999;
+      capacidad : MANDATORY TEXT*50;
+      vocacion : MANDATORY TEXT*50;
+      geom : ISO19107_PLANAS_V1.GM_MultiSurface3D;
+    END fase_cartografica;
+
+  END My_Topic;
+  
+END My_Model.

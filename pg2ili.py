@@ -19,8 +19,13 @@ pg2ili, a script to import tables from PG SQL file to INTERLIS
 import sys
 import re
 
+# CONFIG
 DEBUG = False
+PREFER_3D = True
+GEOMETRY_MODEL_NAME = "ISO19107_PLANAS_V1"
 
+
+# GLOBAL VARS
 currently_inside_table = False
 
 re_create_table = re.compile("^CREATE TABLE [IF NOT EXISTS ]*?([\w\.]+)\s\(", re.I)
@@ -41,10 +46,25 @@ PG_TYPES = {'smallint': "NUMERIC",
             "text": "TEXT*255",
             "varchar": "TEXT*255",
             "date": "INTERLIS.XMLDate",
-            "time": "INTERLIS.XMLDate"}
-PG_TYPES_COMPILED = {re.compile("^{}".format(k.replace("(n)", "([\s]*?\(\d+\))"), re.I)): k for k,v in PG_TYPES.items()}
+            "time": "INTERLIS.XMLDate",
+            "geometry(t)": "GEOMETRY"}
+PG_TYPES_COMPILED = {re.compile("^{}".format(k.replace("(n)", "([\s]*?\(\d+\))").replace("(t)", "([\s]*?\([\w\,\s]+\))"), re.I)): k for k,v in PG_TYPES.items()}
+
+GEOMETRY_TYPES = {"point": {"2d": "GM_Point2D", "3d": "GM_Point3D"},
+                  "curve": {"2d": "GM_Curve2D", "3d": "GM_Curve3D"},
+                  "linestring": {"2d": "GM_Curve2D", "3d": "GM_Curve3D"},
+                  "surface": {"2d": "GM_Surface3D", "3d": "GM_Surface3D"},
+                  "polygon": {"2d": "GM_Surface3D", "3d": "GM_Surface3D"},
+                  "polyhedralsurface": {"2d": None, "3d": None},
+                  "geomcollection": {"2d": None, "3d": None},
+                  "multipoint": {"2d": "GM_MultiPoint2D", "3d": "GM_MultiPoint3D"},
+                  "multicurve": {"2d": "GM_MultiCurve2D", "3d": "GM_MultiCurve3D"},
+                  "multilinestring": {"2d": "GM_MultiCurve2D", "3d": "GM_MultiCurve3D"},
+                  "multisurface": {"2d": "GM_MultiSurface2D", "3d": "GM_MultiSurface3D"},
+                  "multipolygon": {"2d": "GM_MultiSurface2D", "3d": "GM_MultiSurface3D"}}
 
 NOT_NULL = "NOT NULL"
+
 
 def pg2ili(sql_file, model_name="My_Model", topic_name="My_Topic"):
     # Parse file
@@ -114,8 +134,11 @@ def convert_type(pg_type, ili_type, extra):
     if DEBUG: print("[convert_type]", pg_type, ili_type, extra)
     res = ""
     n = 0
+    t = ""
     if extra:
         n = extra[0].strip().strip("(").strip(")")
+        if ili_type == "GEOMETRY":
+            t = n.split(",")[0]
     if ili_type == "NUMERIC":
         res = "0 .. 9999999999"
     elif ili_type == "NUMERIC.":
@@ -126,6 +149,11 @@ def convert_type(pg_type, ili_type, extra):
         res = "TEXT*255"
     elif ili_type == "TEXT*n":
         res = f"TEXT*{n}"
+    elif ili_type == "GEOMETRY":
+        for k,v in GEOMETRY_TYPES.items():
+            if t.lower().startswith(k):
+                res = "{}.{}".format(GEOMETRY_MODEL_NAME, v["3d"] if PREFER_3D else v["3d"])
+                break
     else:
         res = ili_type
 
@@ -173,6 +201,5 @@ if __name__== "__main__":
 
 # TODO:
 #       Default values
-#       Map geometries
 #       More constraints
 #       Associations?
