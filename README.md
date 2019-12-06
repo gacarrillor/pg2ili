@@ -9,4 +9,11 @@ If you start from a PostgreSQL/PostGIS database and want to obtain a model in IN
     python3 ./pg2ili.py ./tests/test3.sql My_New_Model My_New_Topic > /tmp/res.ili
 
 
-See the tests/ folder for examples.
+**Examples:**
+
+See the `tests/` folder for input and output examples.
+
+
+**Unit tests:**
+
+To run the unit tests, open the project in PyCharm, open `tests.py` file and press `Ctrl + Shift + F10`.
