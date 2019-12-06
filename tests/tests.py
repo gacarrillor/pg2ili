@@ -1,7 +1,7 @@
 import nose2
 import unittest
 
-from pg2ili import pg2ili
+from pg2ili import PG2ILI
 
 SQL1 = "test1.sql"
 ILI1 = "res1.ili"
@@ -14,21 +14,24 @@ class TestPG2ILI(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        print('\nINFO: Set up...')
+        print('\nINFO: Set up...\n')
 
     def test_sql1(self):
         print('INFO: Validating pg2ili single table...')
-        ili_string = pg2ili(SQL1)
+        pg2ili = PG2ILI(SQL1)
+        ili_string = pg2ili.convert()
         self.assertTrue(self.compare_ili_to_str(ILI1, ili_string))
 
     def test_sql2(self):
         print('INFO: Validating pg2ili two tables...')
-        ili_string = pg2ili(SQL2)
+        pg2ili = PG2ILI(SQL2)
+        ili_string = pg2ili.convert()
         self.assertTrue(self.compare_ili_to_str(ILI2, ili_string))
 
     def test_sql3(self):
         print('INFO: Validating pg2ili complete...')
-        ili_string = pg2ili(SQL3)
+        pg2ili = PG2ILI(SQL3)
+        ili_string = pg2ili.convert()
         self.assertTrue(self.compare_ili_to_str(ILI3, ili_string))
 
     def compare_ili_to_str(self, ili_file, ili_string):
