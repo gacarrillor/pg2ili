@@ -173,7 +173,8 @@ VERSION "2019-10-11"  =
 def get_footer(model_name="My_Model", topic_name="My_Topic"):
     return """  END {};
   
-END {}.""".format(topic_name, model_name)
+END {}.
+""".format(topic_name, model_name)
 
 def get_ili_class(class_name, attributes):
     if DEBUG: print("[get_ili_class]", class_name, attributes)
@@ -192,14 +193,16 @@ if __name__== "__main__":
     sql_file = sys.argv[1]
     model_name = sys.argv[2] if len(sys.argv) > 2 else "My_Model"
     topic_name = sys.argv[3] if len(sys.argv) > 3 else "My_Topic"
-    print(pg2ili(sql_file, model_name, topic_name))
+    res = pg2ili(sql_file, model_name, topic_name)
+    print(res)
 
-    #python3 ./pg2ili.py ../tests/test1.sql
-    #python3 ./pg2ili.py ../tests/test2.sql
-    #python3 ./pg2ili.py ../tests/test3.sql > /tmp/res.ili
+    #python3 ./pg2ili.py ./tests/test1.sql
+    #python3 ./pg2ili.py ./tests/test2.sql
+    #python3 ./pg2ili.py ./tests/test3.sql > /tmp/res.ili
 
 
 # TODO:
 #       Default values
 #       More constraints
 #       Associations?
+#       Ignore certain tables
