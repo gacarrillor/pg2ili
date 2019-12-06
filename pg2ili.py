@@ -67,10 +67,12 @@ class PG2ILI:
         self.model_name = model_name
         self.topic_name = topic_name
 
-        self.interlis_content = ""
-        self.currently_inside_table = False
         self.re_create_table = re.compile("^CREATE TABLE [IF NOT EXISTS ]*?([\w\.]+)\s\(", re.I)
         self.re_end_create_table = re.compile(r"\);$")
+
+        self.currently_inside_table = False
+        self.interlis_content = ""
+        self.interlis_classes = dict()
 
     def convert(self):
         # Parse file
@@ -94,8 +96,11 @@ class PG2ILI:
                     result = self.re_end_create_table.search(line)
                     if result:
                         self.currently_inside_table = False
-                        self.interlis_content += self.pg_table_to_ili_class(sql_table.strip())
+                        self.pg_table_to_ili_class(sql_table.strip())
                         sql_table = ""  # Initialize var
+
+        for class_name, attributes in self.interlis_classes.items():
+            self.interlis_content += self.get_ili_class(class_name, attributes)
 
         self.interlis_content += self.get_footer()
 
@@ -133,7 +138,7 @@ class PG2ILI:
 
             attributes.append([field_name, ili_type, constraint])
 
-        return self.get_ili_class(class_name, attributes)
+        self.interlis_classes[class_name] = attributes
 
     def convert_type(self, pg_type, ili_type, extra):
         if DEBUG: print("[convert_type]", pg_type, ili_type, extra)
