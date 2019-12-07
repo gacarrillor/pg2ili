@@ -5,7 +5,7 @@ AT "mailto:gcarrillo@linuxmail.org"
 VERSION "2019-10-11" =
 
   TOPIC My_Topic =
-  
+
     CLASS clima =
       id : MANDATORY 0 .. 9999999999;
       nombre : MANDATORY TEXT*100;
@@ -33,6 +33,7 @@ VERSION "2019-10-11" =
       codigo_nuevo : MANDATORY TEXT*10;
       frag_suelo : MANDATORY 0.00 .. 9999999999.99;
       frag_sup : MANDATORY 0.00 .. 9999999999.99;
+      UNIQUE codigo,id_unidad_cartografica;
     END perfil_simple;
 
     CLASS taxonomia =
@@ -59,6 +60,7 @@ VERSION "2019-10-11" =
       simbolo_antiguo : TEXT*15;
       simbolo : MANDATORY TEXT*6;
       estudio : TEXT*200;
+      UNIQUE sigla;
     END unidad_cartografica;
 
     CLASS amazonas =
@@ -256,6 +258,7 @@ VERSION "2019-10-11" =
       observaciones : TEXT*255;
       id_tipo_observacion : MANDATORY 0 .. 9999999999;
       aux : TEXT*255;
+      UNIQUE numero_observacion;
     END descripcion_observacion;
 
     CLASS descripcion_perfil =
@@ -321,6 +324,7 @@ VERSION "2019-10-11" =
     CLASS letra_horizonte =
       id : MANDATORY 0 .. 9999999999;
       letra : MANDATORY TEXT*3;
+      UNIQUE letra;
     END letra_horizonte;
 
     CLASS leyenda_ini_ =
@@ -636,5 +640,5 @@ VERSION "2019-10-11" =
     END unidad_cartografica_medicion;
 
   END My_Topic;
-  
+
 END My_Model.

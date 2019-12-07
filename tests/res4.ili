@@ -1,0 +1,39 @@
+INTERLIS 2.3;
+    
+MODEL My_Model (en)
+AT "mailto:gcarrillo@linuxmail.org"
+VERSION "2019-10-11" =
+    
+  TOPIC My_Topic =
+      
+    CLASS perfil =
+      id : MANDATORY 0 .. 9999999999;
+      codigo : TEXT*10;
+      ucs : TEXT*10;
+      clima : 0 .. 9999999999;
+      pendiente : 0 .. 9999999999;
+      erosion : 0 .. 9999999999;
+      drenaje : 0 .. 9999999999;
+      frag_suelo : 0 .. 9999999999;
+      frag_sup : 0 .. 9999999999;
+      inundacion : TEXT*20;
+      fertilidad : 0.00 .. 9999999999.99;
+      id_profundidad_efectiva : 0 .. 9999999999;
+      id_clase_inundacion : 0 .. 9999999999;
+      id_paso_ucs_perfil : 0 .. 9999999999;
+    END perfil;
+
+    CLASS perfil_simple =
+      id : MANDATORY 0 .. 9999999999;
+      codigo : MANDATORY TEXT*10;
+      id_unidad_cartografica : MANDATORY 0 .. 9999999999;
+      codigo_nuevo : MANDATORY TEXT*10;
+      frag_suelo : MANDATORY 0.00 .. 9999999999.99;
+      frag_sup : MANDATORY 0.00 .. 9999999999.99;
+      UNIQUE codigo,id_unidad_cartografica;
+      UNIQUE codigo_nuevo;
+    END perfil_simple;
+
+  END My_Topic;
+      
+END My_Model.
