@@ -74,6 +74,7 @@ class PG2ILI:
         self.re_alter_table_one_line = re.compile("^ALTER TABLE (?:ONLY )?([\w\.]+).*?;$", re.I)
         self.re_unique_constraint = re.compile("^ALTER TABLE (?:ONLY )?([\w\.]+)\sADD CONSTRAINT [\w\.]+ UNIQUE \(([\w\.\,\s]+)\);$", re.I)
         self.re_primary_key_constraint = re.compile("^ALTER TABLE (?:ONLY )?([\w\.]+)\sADD CONSTRAINT [\w\.]+ PRIMARY KEY \(([\w\.\,\s]+)\);$", re.I)
+        self.re_foreign_key_constraint = re.compile("^ALTER TABLE (?:ONLY )?([\w\.]+)\sADD CONSTRAINT [\w\.]+ FOREIGN KEY \(([\w\.\,]+)\) REFERENCES ([\w\.\,\(\)]+)(?: ON.*)?;$", re.I)
 
         self.currently_inside_table = False
         self.currently_inside_alter_table = False
@@ -81,6 +82,7 @@ class PG2ILI:
         self.pg_tables = dict()  # {Class name: [[attr1_def], [attr2_def], ... [attrN_def]]}
         self.pg_unique_constraints = dict()  # {Class name: [[attrs_unique1], [attrs_another_unique], ...]}
         self.pg_primary_keys = dict()  # {Class name: [attr1, attr2, ..., attrN]}
+        self.pg_foreign_keys = dict()  # {Class name: [fk1_def, fk2_def, ..., fkN_def]}
 
     def convert(self):
         # Parse file
@@ -182,11 +184,42 @@ class PG2ILI:
             self.parse_pg_primary_key_constraint(pg_alter_table_sql, primary_key_result.groups())
             return
 
+        # FOREIGN KEY constraint
+        foreign_key_result = self.re_foreign_key_constraint.search(pg_alter_table_sql)
+        if foreign_key_result:
+            self.parse_pg_foreign_key_constraint(pg_alter_table_sql, foreign_key_result.groups())
+            return
+
         # UNIQUE constraint
         unique_result = self.re_unique_constraint.search(pg_alter_table_sql)
         if unique_result:
             self.parse_pg_unique_constraint(pg_alter_table_sql, unique_result.groups())
             return
+
+    def parse_pg_primary_key_constraint(self, pg_unique_sql, groups):
+        if DEBUG: print("\n[parse_pg_primary_key_constraint]", pg_unique_sql)
+
+        class_name = groups[0]
+        primary_key_attrs = [attr_name.strip() for attr_name in groups[1].split(",")]
+
+        self.pg_primary_keys[class_name] = primary_key_attrs
+
+    def parse_pg_foreign_key_constraint(self, pg_unique_sql, groups):
+        if DEBUG: print("\n[parse_pg_foreign_key_constraint]", pg_unique_sql)
+
+        class_name = groups[0]
+        referencing_attrs = [attr_name.strip() for attr_name in groups[1].split(",")]
+
+        parts = groups[2].split("(")
+        referenced_table = parts[0]
+        referenced_attrs = [attr_name.strip() for attr_name in parts[1].split(")")[0].split(",")]
+
+        foreign_key_def = [referencing_attrs, referenced_table, referenced_attrs]
+
+        if class_name in self.pg_foreign_keys:
+            self.pg_foreign_keys[class_name].append(foreign_key_def)
+        else:
+            self.pg_foreign_keys[class_name] = [foreign_key_def]  # List of lists
 
     def parse_pg_unique_constraint(self, pg_unique_sql, groups):
         if DEBUG: print("\n[parse_pg_unique_constraint]", pg_unique_sql)
@@ -198,14 +231,6 @@ class PG2ILI:
             self.pg_unique_constraints[class_name].append(unique_attrs)
         else:
             self.pg_unique_constraints[class_name] = [unique_attrs]  # List of lists
-
-    def parse_pg_primary_key_constraint(self, pg_unique_sql, groups):
-        if DEBUG: print("\n[parse_pg_primary_key_constraint]", pg_unique_sql)
-
-        class_name = groups[0]
-        primary_key_attrs = [attr_name.strip() for attr_name in groups[1].split(",")]
-
-        self.pg_primary_keys[class_name] = primary_key_attrs
 
     def convert_type(self, pg_type, ili_type, extra):
         if DEBUG: print("[convert_type]", pg_type, ili_type, extra)
@@ -256,6 +281,8 @@ END {}.
     def get_ili_class(self, class_name, attributes):
         if DEBUG: print("\n[get_ili_class]", class_name, attributes)
         if DEBUG: print("[get_ili_class] UNIQUE Constraints: ", self.pg_unique_constraints[class_name] if class_name in self.pg_unique_constraints else [])
+        if DEBUG: print("[get_ili_class] PRIMARY KEY Constraint: ", self.pg_primary_keys[class_name] if class_name in self.pg_primary_keys else [])
+        if DEBUG: print("[get_ili_class] FOREIGN KEY Constraint: ", self.pg_foreign_keys[class_name] if class_name in self.pg_foreign_keys else [])
         ili_class = ""
         ili_class += f"    CLASS {class_name} ="
         for attribute in attributes:

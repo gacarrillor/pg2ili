@@ -11,6 +11,8 @@ SQL3 = "test3.sql"
 ILI3 = "res3.ili"
 SQL4 = "test4.sql"
 ILI4 = "res4.ili"
+SQL5 = "test5.sql"
+ILI5 = "res5.ili"
 
 class TestPG2ILI(unittest.TestCase):
 
@@ -49,6 +51,15 @@ class TestPG2ILI(unittest.TestCase):
         self.assertEqual(len(pg2ili.pg_primary_keys), 1)
         self.assertEqual(len(pg2ili.pg_unique_constraints), 1)
         self.assertTrue(self.compare_ili_to_str(ILI4, ili_string), "Test 4 failed!")
+
+    def test_sql5(self):
+        print('INFO: Validating pg2ili associations...')
+        pg2ili = PG2ILI(SQL5)
+        ili_string = pg2ili.convert()
+        self.assertEqual(len(pg2ili.pg_primary_keys), 3)
+        self.assertEqual(len(pg2ili.pg_unique_constraints), 0)
+        self.assertEqual(len(pg2ili.pg_foreign_keys), 2)
+        #self.assertTrue(self.compare_ili_to_str(ILI5, ili_string), "Test 5 failed!")
 
     def compare_ili_to_str(self, ili_file, ili_string):
         file_contents = ""
