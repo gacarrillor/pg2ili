@@ -22,24 +22,32 @@ class TestPG2ILI(unittest.TestCase):
         print('INFO: Validating pg2ili single table...')
         pg2ili = PG2ILI(SQL1)
         ili_string = pg2ili.convert()
+        self.assertEqual(len(pg2ili.pg_primary_keys), 0)
+        self.assertEqual(len(pg2ili.pg_unique_constraints), 0)
         self.assertTrue(self.compare_ili_to_str(ILI1, ili_string), "Test 1 failed!")
 
     def test_sql2(self):
         print('INFO: Validating pg2ili two tables...')
         pg2ili = PG2ILI(SQL2)
         ili_string = pg2ili.convert()
+        self.assertEqual(len(pg2ili.pg_primary_keys), 0)
+        self.assertEqual(len(pg2ili.pg_unique_constraints), 0)
         self.assertTrue(self.compare_ili_to_str(ILI2, ili_string), "Test 2 failed!")
 
     def test_sql3(self):
         print('INFO: Validating pg2ili complete...')
         pg2ili = PG2ILI(SQL3)
         ili_string = pg2ili.convert()
+        self.assertEqual(len(pg2ili.pg_primary_keys), 46)
+        self.assertEqual(len(pg2ili.pg_unique_constraints), 4)
         self.assertTrue(self.compare_ili_to_str(ILI3, ili_string), "Test 3 failed!")
 
     def test_sql4(self):
         print('INFO: Validating pg2ili UNIQUE constraints...')
         pg2ili = PG2ILI(SQL4)
         ili_string = pg2ili.convert()
+        self.assertEqual(len(pg2ili.pg_primary_keys), 1)
+        self.assertEqual(len(pg2ili.pg_unique_constraints), 1)
         self.assertTrue(self.compare_ili_to_str(ILI4, ili_string), "Test 4 failed!")
 
     def compare_ili_to_str(self, ili_file, ili_string):
@@ -59,8 +67,8 @@ class TestPG2ILI(unittest.TestCase):
         for i, file_line in enumerate(file_lines):
             if file_line.strip() != str_lines[i].strip():
                 print("ERROR: Different line ({})!".format(i))
-                print("file_line:", len(file_line))
-                print("str_line:", len(str_lines[i]))
+                print("file_line: (length: {}".format(len(file_line)), file_line)
+                print("str_line: (length: {})".format(len(str_lines[i])), str_lines[i])
                 return False
 
         return True

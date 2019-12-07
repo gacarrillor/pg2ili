@@ -1,5 +1,5 @@
 # pg2ili
-Python script to import tables from a PostgreSQL/PostGIS SQL file to [INTERLIS](https://www.interlis.ch/en). 
+Python script to import tables from a PostgreSQL/PostGIS SQL (DDL) file to [INTERLIS](https://www.interlis.ch/en). 
 
 pg2ili was created for saving time in migration or reverse engineering processes.
 
