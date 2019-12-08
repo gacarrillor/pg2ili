@@ -23,6 +23,19 @@ import re
 DEBUG = False
 PREFER_3D = True
 GEOMETRY_MODEL_NAME = "ISO19107_PLANAS_V1"
+IGNORE_TABLES = ["t_ili2db_attrname",
+                 "t_ili2db_basket",
+                 "t_ili2db_classname",
+                 "t_ili2db_column_prop",
+                 "t_ili2db_dataset",
+                 "t_ili2db_inheritance",
+                 "t_ili2db_meta_attrs",
+                 "t_ili2db_model",
+                 "t_ili2db_settings",
+                 "t_ili2db_table_prop",
+                 "t_ili2db_trafo"]
+IGNORE_ATTRIBUTES = ["t_ili_tid"]
+
 
 class PG2ILI:
     PG_TYPES = {
@@ -74,20 +87,20 @@ class PG2ILI:
         self.re_alter_table_one_line = re.compile("^ALTER TABLE (?:ONLY )?([\w\.]+).*?;$", re.I)
         self.re_unique_constraint = re.compile("^ALTER TABLE (?:ONLY )?([\w\.]+)\sADD CONSTRAINT [\w\.]+ UNIQUE \(([\w\.\,\s]+)\);$", re.I)
         self.re_primary_key_constraint = re.compile("^ALTER TABLE (?:ONLY )?([\w\.]+)\sADD CONSTRAINT [\w\.]+ PRIMARY KEY \(([\w\.\,\s]+)\);$", re.I)
-        self.re_foreign_key_constraint = re.compile("^ALTER TABLE (?:ONLY )?([\w\.]+)\sADD CONSTRAINT [\w\.]+ FOREIGN KEY \(([\w\.\,]+)\) REFERENCES ([\w\.\,\(\)]+)(?: ON.*)?;$", re.I)
+        self.re_foreign_key_constraint = re.compile("^ALTER TABLE (?:ONLY )?([\w\.]+)\sADD CONSTRAINT [\w\.]+ FOREIGN KEY \(([\w\.\,]+)\) REFERENCES ([\w\.\,\(\)]+)(?: .*)?;$", re.I)
 
         self.currently_inside_table = False
         self.currently_inside_alter_table = False
         self.interlis_content = ""
-        self.pg_tables = dict()  # {Class name: [[attr1_def], [attr2_def], ... [attrN_def]]}
-        self.pg_unique_constraints = dict()  # {Class name: [[attrs_unique1], [attrs_another_unique], ...]}
+        self.any_geometry = False
+        self.pg_tables = dict()  # {Class name: [[attr_name, type], [attr_name, type], ... [attr_name, type]]}
+        self.pg_not_nulls = dict()  # {Class name: [attr1, attr2, ..., attrN]}
+        self.pg_uniques = dict()  # {Class name: [[attrs_unique1], [attrs_another_unique], ...]}
         self.pg_primary_keys = dict()  # {Class name: [attr1, attr2, ..., attrN]}
-        self.pg_foreign_keys = dict()  # {Class name: [fk1_def, fk2_def, ..., fkN_def]}
+        self.pg_foreign_keys = dict()  # {Class name: [fk1_def, fk2_def, ..., fkN_def]}, fk_def = [[referencing_attrs], referenced_table, [referenced_attrs]]
 
     def convert(self):
         # Parse file
-        self.interlis_content += self.get_header()
-
         sql_table = ""
         sql_alter_table = ""
 
@@ -134,8 +147,15 @@ class PG2ILI:
                         self.parse_pg_alter_table(sql_alter_table)
                         sql_alter_table = ""  # Get it ready for the next constraint
 
+        # Convert to INTERLIS
+        self.interlis_content += self.get_header()
+
         for class_name, attributes in self.pg_tables.items():
             self.interlis_content += self.get_ili_class(class_name, attributes)
+
+        for class_name, foreign_key_defs in self.pg_foreign_keys.items():
+            for foreign_key_def in foreign_key_defs:
+                self.interlis_content += self.get_ili_association(class_name, foreign_key_def)
 
         self.interlis_content += self.get_footer()
 
@@ -145,7 +165,10 @@ class PG2ILI:
         if DEBUG: print("\n[parse_pg_table]", pg_table_sql)
         first_chunk = pg_table_sql.split("(")[0] + "("
         result = self.re_create_table.search(first_chunk)
-        class_name = result.group(1).strip()
+        class_name = self.normalize_class_name(result.group(1).strip())
+        if class_name in IGNORE_TABLES:
+            return
+
         pg_table_sql = pg_table_sql[len(first_chunk)+1:]
         attributes = list()
 
@@ -155,9 +178,11 @@ class PG2ILI:
             if DEBUG: print("[parse_pg_table]", line)
 
             field_name = line.split(" ")[0]
+            if field_name in IGNORE_ATTRIBUTES:
+                continue
+
             line = line[len(field_name)+1:]  # Preserve the rest
             ili_type = ""
-            constraint = ""
             for k,v in self.PG_TYPES_COMPILED.items():
                 result = k.search(line)
                 if result:
@@ -169,9 +194,12 @@ class PG2ILI:
                 continue
 
             if self.NOT_NULL in line:
-                constraint = "MANDATORY"
+                if not class_name in self.pg_not_nulls:
+                    self.pg_not_nulls[class_name] = [field_name]
+                else:
+                    self.pg_not_nulls[class_name].append(field_name)
 
-            attributes.append([field_name, ili_type, constraint])
+            attributes.append([field_name, ili_type])
 
         self.pg_tables[class_name] = attributes
 
@@ -199,20 +227,32 @@ class PG2ILI:
     def parse_pg_primary_key_constraint(self, pg_unique_sql, groups):
         if DEBUG: print("\n[parse_pg_primary_key_constraint]", pg_unique_sql)
 
-        class_name = groups[0]
-        primary_key_attrs = [attr_name.strip() for attr_name in groups[1].split(",")]
+        class_name = self.normalize_class_name(groups[0])
+        if class_name in IGNORE_TABLES:
+            return
+
+        primary_key_attrs = [attr_name.strip() for attr_name in groups[1].split(",") if not attr_name.strip() in IGNORE_ATTRIBUTES]
 
         self.pg_primary_keys[class_name] = primary_key_attrs
 
     def parse_pg_foreign_key_constraint(self, pg_unique_sql, groups):
         if DEBUG: print("\n[parse_pg_foreign_key_constraint]", pg_unique_sql)
 
-        class_name = groups[0]
+        class_name = self.normalize_class_name(groups[0])
+        if class_name in IGNORE_TABLES:
+            return
+
         referencing_attrs = [attr_name.strip() for attr_name in groups[1].split(",")]
+        for attr in referencing_attrs:
+            if attr in IGNORE_ATTRIBUTES:
+                return
 
         parts = groups[2].split("(")
-        referenced_table = parts[0]
+        referenced_table = self.normalize_class_name(parts[0])
         referenced_attrs = [attr_name.strip() for attr_name in parts[1].split(")")[0].split(",")]
+        for attr in referenced_attrs:
+            if attr in IGNORE_ATTRIBUTES:
+                return
 
         foreign_key_def = [referencing_attrs, referenced_table, referenced_attrs]
 
@@ -224,13 +264,16 @@ class PG2ILI:
     def parse_pg_unique_constraint(self, pg_unique_sql, groups):
         if DEBUG: print("\n[parse_pg_unique_constraint]", pg_unique_sql)
 
-        class_name = groups[0]
-        unique_attrs = [attr_name.strip() for attr_name in groups[1].split(",")]
+        class_name = self.normalize_class_name(groups[0])
+        if class_name in IGNORE_TABLES:
+            return
 
-        if class_name in self.pg_unique_constraints:
-            self.pg_unique_constraints[class_name].append(unique_attrs)
+        unique_attrs = [attr_name.strip() for attr_name in groups[1].split(",") if not attr_name.strip() in IGNORE_ATTRIBUTES]
+
+        if class_name in self.pg_uniques:
+            self.pg_uniques[class_name].append(unique_attrs)
         else:
-            self.pg_unique_constraints[class_name] = [unique_attrs]  # List of lists
+            self.pg_uniques[class_name] = [unique_attrs]  # List of lists
 
     def convert_type(self, pg_type, ili_type, extra):
         if DEBUG: print("[convert_type]", pg_type, ili_type, extra)
@@ -254,6 +297,7 @@ class PG2ILI:
         elif ili_type == "GEOMETRY":
             for k,v in self.GEOMETRY_TYPES.items():
                 if t.lower().startswith(k):
+                    self.any_geometry = True
                     res = "{}.{}".format(GEOMETRY_MODEL_NAME, v["3d"] if PREFER_3D else v["2d"])
                     break
         else:
@@ -267,10 +311,10 @@ class PG2ILI:
 MODEL {} (en)
 AT "mailto:gcarrillo@linuxmail.org"
 VERSION "2019-10-11" =
-    
+  {}
   TOPIC {} =
       
-""".format(self.model_name, self.topic_name)
+""".format(self.model_name, "IMPORTS {};\n".format(GEOMETRY_MODEL_NAME) if self.any_geometry else "", self.topic_name)
 
     def get_footer(self):
         return """  END {};
@@ -280,21 +324,30 @@ END {}.
 
     def get_ili_class(self, class_name, attributes):
         if DEBUG: print("\n[get_ili_class]", class_name, attributes)
-        if DEBUG: print("[get_ili_class] UNIQUE Constraints: ", self.pg_unique_constraints[class_name] if class_name in self.pg_unique_constraints else [])
+        if DEBUG: print("[get_ili_class] UNIQUE Constraints: ", self.pg_uniques[class_name] if class_name in self.pg_uniques else [])
         if DEBUG: print("[get_ili_class] PRIMARY KEY Constraint: ", self.pg_primary_keys[class_name] if class_name in self.pg_primary_keys else [])
         if DEBUG: print("[get_ili_class] FOREIGN KEY Constraint: ", self.pg_foreign_keys[class_name] if class_name in self.pg_foreign_keys else [])
         ili_class = ""
         ili_class += f"    CLASS {class_name} ="
+
+        # List of attributes to skip (found in associations), as INTERLIS creates them from the association itself
+        skip_attribute_names = ["t_id"]  # We take t_id into account (e.g., in associations) but do not define it in the output ILI
+        if class_name in self.pg_foreign_keys:
+            skip_attribute_names += [referencing_field for foreign_key_def in self.pg_foreign_keys[class_name] for referencing_field in foreign_key_def[0]]
+
         for attribute in attributes:
+            if attribute[0] in skip_attribute_names:
+                continue
+
             ili_class = "{}\n      {} : {}{};".format(ili_class,
-                                                    attribute[0],
-                                                    f"{attribute[2]} " if attribute[2] else "",
-                                                    attribute[1])
+                                                      attribute[0],
+                                                      "MANDATORY " if class_name in self.pg_not_nulls and attribute[0] in self.pg_not_nulls[class_name] else "",
+                                                      attribute[1])
 
         # Write UNIQUE constraints
-        if class_name in self.pg_unique_constraints:
-            for unique_attributes in self.pg_unique_constraints[class_name]:  # Iterate list of lists
-                attribute_names = [attr_def[0] for attr_def in attributes]
+        if class_name in self.pg_uniques:
+            for unique_attributes in self.pg_uniques[class_name]:  # Iterate list of lists
+                attribute_names = [attr_def[0] for attr_def in attributes if attr_def[0] not in skip_attribute_names]
                 all_attributes = True
 
                 for unique_attribute in unique_attributes:
@@ -306,6 +359,56 @@ END {}.
 
         ili_class += "\n    END {};\n\n".format(class_name)
         return ili_class
+
+    def get_ili_association(self, class_name, foreign_key_def):
+        if DEBUG: print("\n[get_ili_association]", class_name, foreign_key_def)
+
+        ili_association = ""
+        ili_association += f"    ASSOCIATION ="
+
+        referencing_table = class_name
+        referencing_fields = foreign_key_def[0]
+        referenced_table = foreign_key_def[1]
+        referenced_fields = foreign_key_def[2]
+
+        referencing_cardinality = self.get_role_cardinality(referencing_table, referencing_fields[0], "referencing")
+        referenced_cardinality = self.get_role_cardinality(referencing_table, referencing_fields[0], "referenced")
+
+        ili_association += "\n      {} -- {{{}}} {};".format(referencing_table,  # Role
+                                                             referencing_cardinality,
+                                                             referencing_table)  # Class
+        ili_association += "\n      {} -- {{{}}} {};".format(referencing_fields[0],  # Role
+                                                             referenced_cardinality,
+                                                             referenced_table)  # Class
+        ili_association += "\n    END;\n\n"
+        return ili_association
+
+    def get_role_cardinality(self, table, attribute, table_type):
+        if DEBUG: print("\n[get_role_cardinality] NOT NULLs for {}:".format(table), self.pg_not_nulls[table] if table in self.pg_not_nulls else [])
+        cardinality = ""
+        if table_type == 'referenced':
+            cardinality = "1" if table in self.pg_not_nulls and attribute in self.pg_not_nulls[table] else "0..1"
+        else:  # Referencing
+            #           UNIQUE          NOT NULL
+            # 0..*                                     ?
+            # 1..*                          x          ?
+            # 0..1        x                            ?
+            # 1           x                 x
+            not_null = True if table in self.pg_not_nulls and attribute in self.pg_not_nulls[table] else False
+            unique = True if table in self.pg_uniques and [attribute] in self.pg_uniques[table] else False
+
+            cardinality = "1" if not_null else "0"
+            if not (not_null and unique):
+                cardinality += "..1" if unique and not not_null else "..*"
+
+        return cardinality
+
+    def normalize_class_name(self, name):
+        parts = name.split(".")
+        if len(parts) == 2:
+            return parts[1]
+
+        return name
 
 
 if __name__== "__main__":
@@ -323,9 +426,7 @@ if __name__== "__main__":
 # TODO:
 #       Default values
 #       More constraints
-#       Ignore certain tables
+#       M:N relationships
 #
-#       Parse and save relationships
 #       If a relation references a primary key, use t_id instead
 #       Remove primary key attributes from ili classes (Optional?)
-#       Analize UNIQUE constraints to determine cardinality of the relationship

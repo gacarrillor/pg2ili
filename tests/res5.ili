@@ -1,0 +1,56 @@
+INTERLIS 2.3;
+    
+MODEL My_Model (en)
+AT "mailto:gcarrillo@linuxmail.org"
+VERSION "2019-10-11" =
+  
+  TOPIC My_Topic =
+      
+    CLASS capacidad =
+      id : MANDATORY 0 .. 9999999999;
+      id_fase_cartografica : MANDATORY 0 .. 9999999999;
+      capacidad : MANDATORY TEXT*7;
+      descripcion : MANDATORY TEXT*300;
+    END capacidad;
+
+    CLASS fase_cartografica =
+      id : MANDATORY 0 .. 9999999999;
+      simbolo : MANDATORY TEXT*8;
+      id_pendiente : MANDATORY 0 .. 9999999999;
+      id_pedregosidad : 0 .. 9999999999;
+      id_salinidad : 0 .. 9999999999;
+      id_erosion : 0 .. 9999999999;
+      id_inundabilidad : 0 .. 9999999999;
+      frag_sup : MANDATORY 0 .. 9999999999;
+      frag_suelo : MANDATORY 0 .. 9999999999;
+      capacidad : MANDATORY TEXT*50;
+      vocacion : MANDATORY TEXT*50;
+    END fase_cartografica;
+
+    CLASS unidad_cartografica =
+      id : MANDATORY 0 .. 9999999999;
+      sigla : MANDATORY TEXT*15;
+      nombre : MANDATORY TEXT*100;
+      paisaje : MANDATORY TEXT*150;
+      mat_parental : MANDATORY TEXT*150;
+      localizacion : MANDATORY TEXT*150;
+      id_clima : MANDATORY 0 .. 9999999999;
+      fuente : TEXT*250;
+      simbolo_antiguo : TEXT*15;
+      simbolo : MANDATORY TEXT*6;
+      estudio : TEXT*200;
+    END unidad_cartografica;
+
+    ASSOCIATION =
+      capacidad -- {1} capacidad;
+      id_unidad_cartografica -- {1} unidad_cartografica;
+    END;
+
+    ASSOCIATION =
+      fase_cartografica -- {0..*} fase_cartografica;
+      id_unidad_cartografica -- {0..1} unidad_cartografica;
+    END;
+
+  END My_Topic;
+      
+END My_Model.

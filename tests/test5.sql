@@ -16,7 +16,7 @@ CREATE TABLE fase_cartografica (
     id_salinidad integer DEFAULT 2,
     id_erosion integer DEFAULT 1,
     id_inundabilidad integer DEFAULT 1,
-    id_unidad_cartografica integer NOT NULL,
+    id_unidad_cartografica integer,
     frag_sup integer DEFAULT 0 NOT NULL,
     frag_suelo integer DEFAULT 0 NOT NULL,
     capacidad character varying(50) DEFAULT 'ND'::character varying NOT NULL,
@@ -52,6 +52,8 @@ ALTER TABLE ONLY fase_cartografica
 ALTER TABLE ONLY unidad_cartografica
     ADD CONSTRAINT unidad_cartografica_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY capacidad
+    ADD CONSTRAINT unidad_cartografica_unique UNIQUE (id_unidad_cartografica);
 
 ALTER TABLE ONLY capacidad
     ADD CONSTRAINT capacidad_id_unidad_cartografica_fkey FOREIGN KEY (id_unidad_cartografica) REFERENCES unidad_cartografica(id);

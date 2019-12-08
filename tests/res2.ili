@@ -1,11 +1,12 @@
 INTERLIS 2.3;
-
+    
 MODEL My_Model (en)
 AT "mailto:gcarrillo@linuxmail.org"
 VERSION "2019-10-11" =
+  IMPORTS ISO19107_PLANAS_V1;
 
   TOPIC My_Topic =
-  
+      
     CLASS clima =
       id : MANDATORY 0 .. 9999999999;
       nombre : MANDATORY TEXT*100;
@@ -29,5 +30,5 @@ VERSION "2019-10-11" =
     END fase_cartografica;
 
   END My_Topic;
-  
+      
 END My_Model.

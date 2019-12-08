@@ -1,0 +1,22 @@
+INTERLIS 2.3;
+    
+MODEL My_Model (en)
+AT "mailto:gcarrillo@linuxmail.org"
+VERSION "2019-10-11" =
+    
+  TOPIC My_Topic =
+      
+    CLASS a =
+    END a;
+
+    CLASS b =
+    END b;
+
+    ASSOCIATION =
+      b -- {0..*} b;
+      role_a -- {0..1} a;
+    END;
+
+  END My_Topic;
+      
+END My_Model.

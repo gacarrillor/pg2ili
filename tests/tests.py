@@ -13,6 +13,10 @@ SQL4 = "test4.sql"
 ILI4 = "res4.ili"
 SQL5 = "test5.sql"
 ILI5 = "res5.ili"
+SQL6 = "test6.sql"
+ILI6 = "res6.ili"
+SQL7 = "test7.sql"
+ILI7 = "res7.ili"
 
 class TestPG2ILI(unittest.TestCase):
 
@@ -25,7 +29,7 @@ class TestPG2ILI(unittest.TestCase):
         pg2ili = PG2ILI(SQL1)
         ili_string = pg2ili.convert()
         self.assertEqual(len(pg2ili.pg_primary_keys), 0)
-        self.assertEqual(len(pg2ili.pg_unique_constraints), 0)
+        self.assertEqual(len(pg2ili.pg_uniques), 0)
         self.assertTrue(self.compare_ili_to_str(ILI1, ili_string), "Test 1 failed!")
 
     def test_sql2(self):
@@ -33,7 +37,7 @@ class TestPG2ILI(unittest.TestCase):
         pg2ili = PG2ILI(SQL2)
         ili_string = pg2ili.convert()
         self.assertEqual(len(pg2ili.pg_primary_keys), 0)
-        self.assertEqual(len(pg2ili.pg_unique_constraints), 0)
+        self.assertEqual(len(pg2ili.pg_uniques), 0)
         self.assertTrue(self.compare_ili_to_str(ILI2, ili_string), "Test 2 failed!")
 
     def test_sql3(self):
@@ -41,7 +45,7 @@ class TestPG2ILI(unittest.TestCase):
         pg2ili = PG2ILI(SQL3)
         ili_string = pg2ili.convert()
         self.assertEqual(len(pg2ili.pg_primary_keys), 46)
-        self.assertEqual(len(pg2ili.pg_unique_constraints), 4)
+        self.assertEqual(len(pg2ili.pg_uniques), 4)
         self.assertTrue(self.compare_ili_to_str(ILI3, ili_string), "Test 3 failed!")
 
     def test_sql4(self):
@@ -49,7 +53,7 @@ class TestPG2ILI(unittest.TestCase):
         pg2ili = PG2ILI(SQL4)
         ili_string = pg2ili.convert()
         self.assertEqual(len(pg2ili.pg_primary_keys), 1)
-        self.assertEqual(len(pg2ili.pg_unique_constraints), 1)
+        self.assertEqual(len(pg2ili.pg_uniques), 1)
         self.assertTrue(self.compare_ili_to_str(ILI4, ili_string), "Test 4 failed!")
 
     def test_sql5(self):
@@ -57,9 +61,27 @@ class TestPG2ILI(unittest.TestCase):
         pg2ili = PG2ILI(SQL5)
         ili_string = pg2ili.convert()
         self.assertEqual(len(pg2ili.pg_primary_keys), 3)
-        self.assertEqual(len(pg2ili.pg_unique_constraints), 0)
+        self.assertEqual(len(pg2ili.pg_uniques), 1)
         self.assertEqual(len(pg2ili.pg_foreign_keys), 2)
-        #self.assertTrue(self.compare_ili_to_str(ILI5, ili_string), "Test 5 failed!")
+        self.assertTrue(self.compare_ili_to_str(ILI5, ili_string), "Test 5 failed!")
+
+    def test_sql6(self):
+        print('INFO: Validating pg2ili 1:1 association and ignored tables and attrs...')
+        pg2ili = PG2ILI(SQL6)
+        ili_string = pg2ili.convert()
+        self.assertEqual(len(pg2ili.pg_primary_keys), 2)
+        self.assertEqual(len(pg2ili.pg_uniques), 1)
+        self.assertEqual(len(pg2ili.pg_foreign_keys), 1)
+        self.assertTrue(self.compare_ili_to_str(ILI6, ili_string), "Test 6 failed!")
+
+    def test_sql7(self):
+        print('INFO: Validating pg2ili 0..1:m association...')
+        pg2ili = PG2ILI(SQL7)
+        ili_string = pg2ili.convert()
+        self.assertEqual(len(pg2ili.pg_primary_keys), 0)
+        self.assertEqual(len(pg2ili.pg_uniques), 0)
+        self.assertEqual(len(pg2ili.pg_foreign_keys), 1)
+        self.assertTrue(self.compare_ili_to_str(ILI7, ili_string), "Test 6 failed!")
 
     def compare_ili_to_str(self, ili_file, ili_string):
         file_contents = ""
