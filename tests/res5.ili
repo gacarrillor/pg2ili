@@ -42,7 +42,7 @@ VERSION "2019-10-11" =
     END unidad_cartografica;
 
     ASSOCIATION =
-      capacidad -- {1} capacidad;
+      capacidad -- {0..1} capacidad;
       id_unidad_cartografica -- {1} unidad_cartografica;
     END;
 

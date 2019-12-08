@@ -618,7 +618,7 @@ VERSION "2019-10-11" =
     END unidad_cartografica_medicion;
 
     ASSOCIATION =
-      capacidad -- {1..*} capacidad;
+      capacidad -- {0..*} capacidad;
       id_unidad_cartografica -- {1} unidad_cartografica;
     END;
 
@@ -638,7 +638,7 @@ VERSION "2019-10-11" =
     END;
 
     ASSOCIATION =
-      fase_cartografica -- {1..*} fase_cartografica;
+      fase_cartografica -- {0..*} fase_cartografica;
       id_pendiente -- {1} pendiente;
     END;
 
@@ -648,7 +648,7 @@ VERSION "2019-10-11" =
     END;
 
     ASSOCIATION =
-      fase_cartografica -- {1..*} fase_cartografica;
+      fase_cartografica -- {0..*} fase_cartografica;
       id_unidad_cartografica -- {1} unidad_cartografica;
     END;
 
@@ -663,7 +663,7 @@ VERSION "2019-10-11" =
     END;
 
     ASSOCIATION =
-      horizonte -- {1..*} horizonte;
+      horizonte -- {0..*} horizonte;
       id_perfil -- {1} perfil_simple;
     END;
 
@@ -673,7 +673,7 @@ VERSION "2019-10-11" =
     END;
 
     ASSOCIATION =
-      horizonte -- {1..*} horizonte;
+      horizonte -- {0..*} horizonte;
       id_unidad_cartografica -- {1} unidad_cartografica;
     END;
 
@@ -683,17 +683,17 @@ VERSION "2019-10-11" =
     END;
 
     ASSOCIATION =
-      paso_ucs_perfil -- {1..*} paso_ucs_perfil;
+      paso_ucs_perfil -- {0..*} paso_ucs_perfil;
       id -- {1} unidad_cartografica;
     END;
 
     ASSOCIATION =
-      taxonomia -- {1..*} taxonomia;
+      taxonomia -- {0..*} taxonomia;
       id_perfil -- {1} perfil_simple;
     END;
 
     ASSOCIATION =
-      taxonomia -- {1..*} taxonomia;
+      taxonomia -- {0..*} taxonomia;
       id_unidad_cartografica -- {1} unidad_cartografica;
     END;
 
@@ -718,12 +718,12 @@ VERSION "2019-10-11" =
     END;
 
     ASSOCIATION =
-      perfil_simple -- {1..*} perfil_simple;
+      perfil_simple -- {0..*} perfil_simple;
       id_unidad_cartografica -- {1} unidad_cartografica;
     END;
 
     ASSOCIATION =
-      unidad_cartografica -- {1..*} unidad_cartografica;
+      unidad_cartografica -- {0..*} unidad_cartografica;
       id_clima -- {1} clima;
     END;
 

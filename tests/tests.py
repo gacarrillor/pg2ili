@@ -17,6 +17,10 @@ SQL6 = "test6.sql"
 ILI6 = "res6.ili"
 SQL7 = "test7.sql"
 ILI7 = "res7.ili"
+SQL8 = "test8.sql"
+ILI8 = "res8.ili"
+SQL9 = "test9.sql"
+ILI9 = "res9.ili"
 
 class TestPG2ILI(unittest.TestCase):
 
@@ -66,7 +70,7 @@ class TestPG2ILI(unittest.TestCase):
         self.assertTrue(self.compare_ili_to_str(ILI5, ili_string), "Test 5 failed!")
 
     def test_sql6(self):
-        print('INFO: Validating pg2ili 1:1 association and ignored tables and attrs...')
+        print('INFO: Validating pg2ili 1:0..1 (NN,U) association and ignored tables and attrs...')
         pg2ili = PG2ILI(SQL6)
         ili_string = pg2ili.convert()
         self.assertEqual(len(pg2ili.pg_primary_keys), 2)
@@ -75,13 +79,31 @@ class TestPG2ILI(unittest.TestCase):
         self.assertTrue(self.compare_ili_to_str(ILI6, ili_string), "Test 6 failed!")
 
     def test_sql7(self):
-        print('INFO: Validating pg2ili 0..1:m association...')
+        print('INFO: Validating pg2ili 0..1:0..* () association...')
         pg2ili = PG2ILI(SQL7)
         ili_string = pg2ili.convert()
         self.assertEqual(len(pg2ili.pg_primary_keys), 0)
         self.assertEqual(len(pg2ili.pg_uniques), 0)
         self.assertEqual(len(pg2ili.pg_foreign_keys), 1)
-        self.assertTrue(self.compare_ili_to_str(ILI7, ili_string), "Test 6 failed!")
+        self.assertTrue(self.compare_ili_to_str(ILI7, ili_string), "Test 7 failed!")
+
+    def test_sql8(self):
+        print('INFO: Validating pg2ili 0..1:0..1 (U) association...')
+        pg2ili = PG2ILI(SQL8)
+        ili_string = pg2ili.convert()
+        self.assertEqual(len(pg2ili.pg_primary_keys), 0)
+        self.assertEqual(len(pg2ili.pg_uniques), 1)
+        self.assertEqual(len(pg2ili.pg_foreign_keys), 1)
+        self.assertTrue(self.compare_ili_to_str(ILI8, ili_string), "Test 8 failed!")
+
+    def test_sql9(self):
+        print('INFO: Validating pg2ili 1:0..* (NN) association...')
+        pg2ili = PG2ILI(SQL9)
+        ili_string = pg2ili.convert()
+        self.assertEqual(len(pg2ili.pg_primary_keys), 0)
+        self.assertEqual(len(pg2ili.pg_uniques), 0)
+        self.assertEqual(len(pg2ili.pg_foreign_keys), 1)
+        self.assertTrue(self.compare_ili_to_str(ILI9, ili_string), "Test 9 failed!")
 
     def compare_ili_to_str(self, ili_file, ili_string):
         file_contents = ""

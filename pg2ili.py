@@ -390,16 +390,14 @@ END {}.
             cardinality = "1" if table in self.pg_not_nulls and attribute in self.pg_not_nulls[table] else "0..1"
         else:  # Referencing
             #           UNIQUE          NOT NULL
-            # 0..*                                     ?
-            # 1..*                          x          ?
-            # 0..1        x                            ?
-            # 1           x                 x
-            not_null = True if table in self.pg_not_nulls and attribute in self.pg_not_nulls[table] else False
+            # 0..*
+            # 0..1        x
+            # 1..*        ?                 ?
+            # 1           ?                 ?
+            # not_null = True if table in self.pg_not_nulls and attribute in self.pg_not_nulls[table] else False
             unique = True if table in self.pg_uniques and [attribute] in self.pg_uniques[table] else False
 
-            cardinality = "1" if not_null else "0"
-            if not (not_null and unique):
-                cardinality += "..1" if unique and not not_null else "..*"
+            cardinality = "0..1" if unique else "0..*"
 
         return cardinality
 
