@@ -503,7 +503,6 @@ if __name__== "__main__":
 # TODO:
 #       Default values
 #       More constraints
-#       M:N relationships
 #
 #       If a relation references a primary key, use t_id instead
 #       Remove primary key attributes from ili classes (Optional?)
