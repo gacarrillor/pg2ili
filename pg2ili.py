@@ -385,6 +385,7 @@ END {}.
         ili_association += "\n      {} -- {{{}}} {};".format(referencing_fields[0],  # Role
                                                              referenced_cardinality,
                                                              referenced_table)  # Class
+
         ili_association += "\n    END;\n\n"
         return ili_association
 
@@ -419,7 +420,7 @@ END {}.
                     # Store and expand extra attrs from current class to transfer them to M:N relationship
                     attrs = self.pg_tables[class_name]
                     for attr in attrs:
-                        attr.append(attr in self.pg_not_nulls[class_name] if class_name in self.pg_not_nulls else False)
+                        attr.append(attr[0] in self.pg_not_nulls[class_name] if class_name in self.pg_not_nulls else False)
 
                     # UNIQUE constraints?
                     uniques_to_store = list()
@@ -461,6 +462,21 @@ END {}.
         ili_association += "\n      {} -- {{{}}} {};".format(referencing_fields2[0],  # Role
                                                              referencing_cardinality2,
                                                              referenced_table2)  # Class
+
+        # List of attributes to skip (found in associations), as INTERLIS creates them from the association itself
+        skip_attribute_names = ["t_id"]  # We take t_id into account (e.g., in associations) but do not define it in the output ILI
+        skip_attribute_names += [referencing_field for referencing_field in referencing_fields1]
+        skip_attribute_names += [referencing_field for referencing_field in referencing_fields2]
+
+        for attr in attrs:
+            attr_name, attr_type, not_null = attr
+            if attr_name in skip_attribute_names:
+                continue
+
+            ili_association += "\n      {} : {}{};".format(attr_name,
+                                                           "MANDATORY " if not_null else "",
+                                                           attr_type)
+
         ili_association += "\n    END;\n\n"
         return ili_association
 

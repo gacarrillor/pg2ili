@@ -43,6 +43,7 @@ ALTER TABLE _m_n_01.a OWNER TO postgres;
 CREATE TABLE _m_n_01.associationdef89 (
     t_id bigint DEFAULT nextval('_m_n_01.t_ili2db_seq'::regclass) NOT NULL,
     t_ili_tid character varying(200),
+    abc character varying(25) NOT NULL,
     role_a bigint NOT NULL,
     role_b bigint NOT NULL
 );
