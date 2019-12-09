@@ -456,10 +456,13 @@ END {}.
         referencing_fields1, referenced_table1, referenced_fields1, referencing_cardinality1, referenced_cardinality1 = foreign_key_defs[0]
         referencing_fields2, referenced_table2, referenced_fields2, referencing_cardinality2, referenced_cardinality2 = foreign_key_defs[1]
 
-        ili_association += "\n      {} -- {{{}}} {};".format(referencing_fields1[0],  # Role
+        role1 = referencing_fields1[0] if referencing_fields1[0] not in [attr[0] for attr in self.pg_tables[referenced_table1]] else referenced_table1
+        role2 = referencing_fields2[0] if referencing_fields2[0] not in [attr[0] for attr in self.pg_tables[referenced_table2]] else referenced_table2
+
+        ili_association += "\n      {} -- {{{}}} {};".format(role1,
                                                              referencing_cardinality1,
                                                              referenced_table1)  # Class
-        ili_association += "\n      {} -- {{{}}} {};".format(referencing_fields2[0],  # Role
+        ili_association += "\n      {} -- {{{}}} {};".format(role2,
                                                              referencing_cardinality2,
                                                              referenced_table2)  # Class
 
