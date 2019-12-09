@@ -81,13 +81,13 @@ class PG2ILI:
         self.model_name = model_name
         self.topic_name = topic_name
 
-        self.re_create_table = re.compile("^CREATE TABLE (?:IF NOT EXISTS )?([\w\.]+)\s\(", re.I)
+        self.re_create_table = re.compile("^CREATE TABLE (?:IF NOT EXISTS )?([\"\w\.]+)\s\(", re.I)
         self.re_end_create_table = re.compile(r"\);$")
-        self.re_alter_table = re.compile("^ALTER TABLE (?:ONLY )?([\w\.]+)", re.I)
-        self.re_alter_table_one_line = re.compile("^ALTER TABLE (?:ONLY )?([\w\.]+).*?;$", re.I)
-        self.re_unique_constraint = re.compile("^ALTER TABLE (?:ONLY )?([\w\.]+)\sADD CONSTRAINT [\w\.]+ UNIQUE \(([\w\.\,\s]+)\);$", re.I)
-        self.re_primary_key_constraint = re.compile("^ALTER TABLE (?:ONLY )?([\w\.]+)\sADD CONSTRAINT [\w\.]+ PRIMARY KEY \(([\w\.\,\s]+)\);$", re.I)
-        self.re_foreign_key_constraint = re.compile("^ALTER TABLE (?:ONLY )?([\w\.]+)\sADD CONSTRAINT [\w\.]+ FOREIGN KEY \(([\w\.\,]+)\) REFERENCES ([\w\.\,\(\)]+)(?: .*)?;$", re.I)
+        self.re_alter_table = re.compile("^ALTER TABLE (?:ONLY )?([\"\w\.]+)", re.I)
+        self.re_alter_table_one_line = re.compile("^ALTER TABLE (?:ONLY )?([\"\w\.]+).*?;$", re.I)
+        self.re_unique_constraint = re.compile("^ALTER TABLE (?:ONLY )?([\"\w\.]+)\sADD CONSTRAINT [\w\.]+ UNIQUE \(([\w\.\,\s]+)\);$", re.I)
+        self.re_primary_key_constraint = re.compile("^ALTER TABLE (?:ONLY )?([\"\w\.]+)\sADD CONSTRAINT [\w\.]+ PRIMARY KEY \(([\w\.\,\s]+)\);$", re.I)
+        self.re_foreign_key_constraint = re.compile("^ALTER TABLE (?:ONLY )?([\"\w\.]+)\sADD CONSTRAINT [\w\.]+ FOREIGN KEY \(([\w\.\,]+)\) REFERENCES ([\w\.\,\(\)]+)(?: .*)?;$", re.I)
 
         self.currently_inside_table = False
         self.currently_inside_alter_table = False
@@ -97,7 +97,8 @@ class PG2ILI:
         self.pg_not_nulls = dict()  # {Class name: [attr1, attr2, ..., attrN]}
         self.pg_uniques = dict()  # {Class name: [[attrs_unique1], [attrs_another_unique], ...]}
         self.pg_primary_keys = dict()  # {Class name: [attr1, attr2, ..., attrN]}
-        self.pg_foreign_keys = dict()  # {Class name: [fk1_def, fk2_def, ..., fkN_def]}, fk_def = [[referencing_attrs], referenced_table, [referenced_attrs]]
+        self.pg_foreign_keys = dict()  # {Class name: [fk1_def, fk2_def, ..., fkN_def]}, fk_def = [[referencing_attrs], referenced_table, [referenced_attrs], referencing_cardinality, referenced_cardinality]
+        self.m_n_associations = list()  # [foreign_key_def1, foreign_key_def2, [[attr_name, type, NN, [unique_attr1, ... unique_attrN]], ..., [...]]
 
     def convert(self):
         # Parse file
@@ -150,12 +151,18 @@ class PG2ILI:
         # Convert to INTERLIS
         self.interlis_content += self.get_header()
 
+        # Any M:N relationship?
+        self.identify_m_n_relationships()
+
         for class_name, attributes in self.pg_tables.items():
             self.interlis_content += self.get_ili_class(class_name, attributes)
 
         for class_name, foreign_key_defs in self.pg_foreign_keys.items():
             for foreign_key_def in foreign_key_defs:
                 self.interlis_content += self.get_ili_association(class_name, foreign_key_def)
+
+        for m_n_rel_def in self.m_n_associations:
+            self.interlis_content += self.get_ili_m_n_association(m_n_rel_def)
 
         self.interlis_content += self.get_footer()
 
@@ -238,7 +245,7 @@ class PG2ILI:
     def parse_pg_foreign_key_constraint(self, pg_unique_sql, groups):
         if DEBUG: print("\n[parse_pg_foreign_key_constraint]", pg_unique_sql)
 
-        class_name = self.normalize_class_name(groups[0])
+        class_name = self.normalize_class_name(groups[0])  # Referencing table
         if class_name in IGNORE_TABLES:
             return
 
@@ -254,7 +261,10 @@ class PG2ILI:
             if attr in IGNORE_ATTRIBUTES:
                 return
 
-        foreign_key_def = [referencing_attrs, referenced_table, referenced_attrs]
+        referencing_cardinality = self.get_role_cardinality(class_name, referencing_attrs[0], "referencing")
+        referenced_cardinality = self.get_role_cardinality(class_name, referencing_attrs[0], "referenced")
+
+        foreign_key_def = [referencing_attrs, referenced_table, referenced_attrs, referencing_cardinality, referenced_cardinality]
 
         if class_name in self.pg_foreign_keys:
             self.pg_foreign_keys[class_name].append(foreign_key_def)
@@ -367,12 +377,7 @@ END {}.
         ili_association += f"    ASSOCIATION ="
 
         referencing_table = class_name
-        referencing_fields = foreign_key_def[0]
-        referenced_table = foreign_key_def[1]
-        referenced_fields = foreign_key_def[2]
-
-        referencing_cardinality = self.get_role_cardinality(referencing_table, referencing_fields[0], "referencing")
-        referenced_cardinality = self.get_role_cardinality(referencing_table, referencing_fields[0], "referenced")
+        referencing_fields, referenced_table, referenced_fields, referencing_cardinality, referenced_cardinality = foreign_key_def
 
         ili_association += "\n      {} -- {{{}}} {};".format(referencing_table,  # Role
                                                              referencing_cardinality,
@@ -400,6 +405,64 @@ END {}.
             cardinality = "0..1" if unique else "0..*"
 
         return cardinality
+
+    def identify_m_n_relationships(self):
+        classes_to_remove = list()
+        for class_name, foreign_key_defs in self.pg_foreign_keys.items():
+            if len(foreign_key_defs) == 2:
+                one_many_count = 0
+                for foreign_key_def in foreign_key_defs:
+                    if foreign_key_def[3].endswith("..*"):  # Check cardinality
+                        one_many_count += 1
+
+                if one_many_count == 2: # M:N!!!
+                    # Store and expand extra attrs from current class to transfer them to M:N relationship
+                    attrs = self.pg_tables[class_name]
+                    for attr in attrs:
+                        attr.append(attr in self.pg_not_nulls[class_name] if class_name in self.pg_not_nulls else False)
+
+                    # UNIQUE constraints?
+                    uniques_to_store = list()
+                    if class_name in self.pg_uniques:
+                        for uniques in self.pg_uniques[class_name]:
+                            all_attrs = True
+                            for attr in attrs:
+                                if attr not in uniques:
+                                    all_attrs = False
+                            if all_attrs:
+                                uniques_to_store.append(uniques)
+
+                    # Remove intermediate class from all other dicts
+                    if class_name in self.pg_tables: del self.pg_tables[class_name]
+                    if class_name in self.pg_not_nulls: del self.pg_not_nulls[class_name]
+                    if class_name in self.pg_uniques: del self.pg_uniques[class_name]
+                    if class_name in self.pg_primary_keys: del self.pg_primary_keys[class_name]
+                    classes_to_remove.append(class_name)
+
+                    # Add relationship to M:N list
+                    self.m_n_associations.append([foreign_key_defs, attrs, uniques_to_store])
+
+        for class_name in classes_to_remove:
+            if class_name in self.pg_foreign_keys: del self.pg_foreign_keys[class_name]
+
+    def get_ili_m_n_association(self, m_n_rel_def):
+        if DEBUG: print("\n[get_ili_m_n_association]", m_n_rel_def)
+        foreign_key_defs, attrs, uniques = m_n_rel_def
+
+        ili_association = ""
+        ili_association += f"    ASSOCIATION ="
+
+        referencing_fields1, referenced_table1, referenced_fields1, referencing_cardinality1, referenced_cardinality1 = foreign_key_defs[0]
+        referencing_fields2, referenced_table2, referenced_fields2, referencing_cardinality2, referenced_cardinality2 = foreign_key_defs[1]
+
+        ili_association += "\n      {} -- {{{}}} {};".format(referencing_fields1[0],  # Role
+                                                             referencing_cardinality1,
+                                                             referenced_table1)  # Class
+        ili_association += "\n      {} -- {{{}}} {};".format(referencing_fields2[0],  # Role
+                                                             referencing_cardinality2,
+                                                             referenced_table2)  # Class
+        ili_association += "\n    END;\n\n"
+        return ili_association
 
     def normalize_class_name(self, name):
         parts = name.split(".")

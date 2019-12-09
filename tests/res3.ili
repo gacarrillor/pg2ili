@@ -403,14 +403,6 @@ VERSION "2019-10-11" =
       fase : MANDATORY TEXT*5;
     END suelos_paramos;
 
-    CLASS paso_ucs_perfil =
-      ucs_perfil : MANDATORY TEXT*15;
-      ucs : MANDATORY TEXT*5;
-      perfil : MANDATORY TEXT*6;
-      porcentaje : 0 .. 9999999999;
-      id_ucs : 0 .. 9999999999;
-    END paso_ucs_perfil;
-
     CLASS pedregosidad =
       id : MANDATORY 0 .. 9999999999;
       descripcion : MANDATORY TEXT*2;
@@ -678,16 +670,6 @@ VERSION "2019-10-11" =
     END;
 
     ASSOCIATION =
-      paso_ucs_perfil -- {0..*} paso_ucs_perfil;
-      id_perfil -- {0..1} perfil;
-    END;
-
-    ASSOCIATION =
-      paso_ucs_perfil -- {0..*} paso_ucs_perfil;
-      id -- {1} unidad_cartografica;
-    END;
-
-    ASSOCIATION =
       taxonomia -- {0..*} taxonomia;
       id_perfil -- {1} perfil_simple;
     END;
@@ -725,6 +707,11 @@ VERSION "2019-10-11" =
     ASSOCIATION =
       unidad_cartografica -- {0..*} unidad_cartografica;
       id_clima -- {1} clima;
+    END;
+
+    ASSOCIATION =
+      id_perfil -- {0..*} perfil;
+      id -- {0..*} unidad_cartografica;
     END;
 
   END My_Topic;
