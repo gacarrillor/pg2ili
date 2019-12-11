@@ -44,7 +44,7 @@ class PG2ILI:
         'bigint': "NUMERIC",
         'int': "NUMERIC",
         "real": "NUMERIC.",
-        "float(n)": "NUMERIC.n",
+        "float": "NUMERIC.",
         "double precision": "NUMERIC.",
         "boolean": "BOOLEAN",
         "character varying(n)": "TEXT*n",
@@ -299,7 +299,7 @@ class PG2ILI:
         elif ili_type == "NUMERIC.":
             res = "0.00 .. 9999999999.99"
         elif ili_type == "NUMERIC.n":
-            res = "0.{} .. 9999999999.{}".format("0"*n, "9"*n)
+            res = "0.{} .. 9999999999.{}".format("0"*int(n), "9"*int(n))
         elif ili_type == "TEXT":
             res = "TEXT*255"
         elif ili_type == "TEXT*n":
@@ -317,18 +317,18 @@ class PG2ILI:
 
     def get_header(self):
         return """INTERLIS 2.3;
-    
+
 MODEL {} (en)
 AT "mailto:gcarrillo@linuxmail.org"
-VERSION "2019-10-11" =
+VERSION "2019-12-11" =
   {}
   TOPIC {} =
-      
+
 """.format(self.model_name, "IMPORTS {};\n".format(GEOMETRY_MODEL_NAME) if self.any_geometry else "", self.topic_name)
 
     def get_footer(self):
         return """  END {};
-      
+
 END {}.
     """.format(self.topic_name, self.model_name)
 
