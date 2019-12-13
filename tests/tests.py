@@ -25,6 +25,9 @@ SQL10 = "test10.sql"
 ILI10 = "res10.ili"
 SQL11 = "test11.sql"
 ILI11 = "res11.ili"
+SQL12 = "test12.sql"
+ILI12a = "res12a.ili"
+ILI12b = "res12b.ili"
 
 class TestPG2ILI(unittest.TestCase):
 
@@ -128,6 +131,24 @@ class TestPG2ILI(unittest.TestCase):
         self.assertEqual(len(pg2ili.pg_foreign_keys), 0)
         self.assertEqual(len(pg2ili.m_n_associations), 0)
         self.assertTrue(self.compare_ili_to_str(ILI11, ili_string), "Test 11 failed!")
+
+    def test_sql12(self):
+        print('INFO: Validating pg2ili ignoring Primary Keys...')
+        pg2ili = PG2ILI(SQL12)  # Omitting PKs
+        ili_string = pg2ili.convert()
+        self.assertEqual(len(pg2ili.pg_primary_keys), 3)
+        self.assertEqual(len(pg2ili.pg_uniques), 1)
+        self.assertEqual(len(pg2ili.pg_foreign_keys), 1)
+        self.assertEqual(len(pg2ili.m_n_associations), 1)
+        self.assertTrue(self.compare_ili_to_str(ILI12a, ili_string), "Test 12a failed!")
+
+        pg2ili = PG2ILI(SQL12, omit_primary_keys=False)
+        ili_string = pg2ili.convert()
+        self.assertEqual(len(pg2ili.pg_primary_keys), 3)
+        self.assertEqual(len(pg2ili.pg_uniques), 1)
+        self.assertEqual(len(pg2ili.pg_foreign_keys), 1)
+        self.assertEqual(len(pg2ili.m_n_associations), 1)
+        self.assertTrue(self.compare_ili_to_str(ILI12b, ili_string), "Test 12b failed!")
 
     def compare_ili_to_str(self, ili_file, ili_string):
         file_contents = ""

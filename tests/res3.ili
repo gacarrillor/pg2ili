@@ -8,12 +8,10 @@ VERSION "2019-12-11" =
   TOPIC My_Topic =
 
     CLASS clima =
-      id : MANDATORY 0 .. 9999999999;
       nombre : MANDATORY TEXT*100;
     END clima;
 
     CLASS fase_cartografica =
-      id : MANDATORY 0 .. 9999999999;
       simbolo : MANDATORY TEXT*8;
       frag_sup : MANDATORY 0 .. 9999999999;
       frag_suelo : MANDATORY 0 .. 9999999999;
@@ -22,7 +20,6 @@ VERSION "2019-12-11" =
     END fase_cartografica;
 
     CLASS perfil_simple =
-      id : MANDATORY 0 .. 9999999999;
       codigo : MANDATORY TEXT*10;
       codigo_nuevo : MANDATORY TEXT*10;
       frag_suelo : MANDATORY 0.00 .. 9999999999.99;
@@ -30,13 +27,11 @@ VERSION "2019-12-11" =
     END perfil_simple;
 
     CLASS taxonomia =
-      id : MANDATORY 0 .. 9999999999;
       p_representacion : MANDATORY 0.00 .. 9999999999.99;
       nombre : MANDATORY TEXT*70;
     END taxonomia;
 
     CLASS unidad_cartografica =
-      id : MANDATORY 0 .. 9999999999;
       sigla : MANDATORY TEXT*15;
       nombre : MANDATORY TEXT*100;
       paisaje : MANDATORY TEXT*150;
@@ -50,7 +45,6 @@ VERSION "2019-12-11" =
     END unidad_cartografica;
 
     CLASS amazonas =
-      gid : MANDATORY 0 .. 9999999999;
       ucsuelo : TEXT*10;
       s_uc : TEXT*254;
       s_uc_fase : TEXT*254;
@@ -81,14 +75,12 @@ VERSION "2019-12-11" =
     END aptitud;
 
     CLASS drenaje_natural =
-      id : MANDATORY 0 .. 9999999999;
       codigo : MANDATORY 0 .. 9999999999;
       descripcion : MANDATORY TEXT*50;
       drenaje_vocacion : MANDATORY 0 .. 9999999999;
     END drenaje_natural;
 
     CLASS horizonte =
-      id : MANDATORY 0 .. 9999999999;
       nombre : MANDATORY TEXT*8;
       ph : 0.00 .. 9999999999.99;
       cic : 0.00 .. 9999999999.99;
@@ -107,7 +99,6 @@ VERSION "2019-12-11" =
     END horizonte;
 
     CLASS pendiente =
-      id : MANDATORY 0 .. 9999999999;
       letra : MANDATORY TEXT*1;
       lim_inf : MANDATORY 0 .. 9999999999;
       lim_sup : MANDATORY 0 .. 9999999999;
@@ -116,14 +107,12 @@ VERSION "2019-12-11" =
     END pendiente;
 
     CLASS profundidad_efectiva =
-      id : MANDATORY 0 .. 9999999999;
       codigo : MANDATORY 0 .. 9999999999;
       descripcion : MANDATORY TEXT*50;
       valor_medio : MANDATORY 0 .. 9999999999;
     END profundidad_efectiva;
 
     CLASS capacidad =
-      id : MANDATORY 0 .. 9999999999;
       id_fase_cartografica : MANDATORY 0 .. 9999999999;
       capacidad : MANDATORY TEXT*7;
       descripcion : MANDATORY TEXT*300;
@@ -139,25 +128,21 @@ VERSION "2019-12-11" =
     END cartografia;
 
     CLASS clase_agrologica =
-      id : MANDATORY 0 .. 9999999999;
       nombre : MANDATORY TEXT*120;
     END clase_agrologica;
 
     CLASS color =
-      id : MANDATORY 0 .. 9999999999;
       cod_munsel : MANDATORY TEXT*15;
       nombre : MANDATORY TEXT*50;
     END color;
 
     CLASS erosion =
-      id : MANDATORY 0 .. 9999999999;
       codigo : MANDATORY 0 .. 9999999999;
       descripcion : MANDATORY TEXT*12;
       codigo_vocacion : 0 .. 9999999999;
     END erosion;
 
     CLASS fertilidad =
-      id : MANDATORY 0 .. 9999999999;
       codigo : MANDATORY 0 .. 9999999999;
       descripcion : MANDATORY TEXT*50;
       lim_sup : MANDATORY 0.00 .. 9999999999.99;
@@ -165,20 +150,17 @@ VERSION "2019-12-11" =
     END fertilidad;
 
     CLASS inundabilidad =
-      id : MANDATORY 0 .. 9999999999;
       codigo : MANDATORY TEXT*1;
       explicacion : MANDATORY TEXT*40;
       clases : MANDATORY TEXT*40;
     END inundabilidad;
 
     CLASS textura =
-      id : MANDATORY 0 .. 9999999999;
       simbolo : MANDATORY TEXT*4;
       descripcion : MANDATORY TEXT*30;
     END textura;
 
     CLASS descripcion_observacion =
-      id : MANDATORY 0 .. 9999999999;
       dia : MANDATORY 0 .. 9999999999;
       mes : MANDATORY 0 .. 9999999999;
       anio : MANDATORY 0 .. 9999999999;
@@ -242,42 +224,35 @@ VERSION "2019-12-11" =
     END descripcion_observacion;
 
     CLASS descripcion_perfil =
-      id : MANDATORY 0 .. 9999999999;
       perfil : MANDATORY TEXT*10;
       descripcion : MANDATORY TEXT*255;
       fertilidad : 0.00 .. 9999999999.99;
     END descripcion_perfil;
 
     CLASS descriptor =
-      id : MANDATORY 0 .. 9999999999;
       nombre : MANDATORY TEXT*120;
       otra_info : TEXT*255;
     END descriptor;
 
     CLASS encharcamiento =
-      id : MANDATORY 0 .. 9999999999;
       nombre : MANDATORY TEXT*120;
     END encharcamiento;
 
     CLASS estructura =
-      id : MANDATORY 0 .. 9999999999;
       codigo : MANDATORY 0 .. 9999999999;
       descripcion : MANDATORY TEXT*100;
     END estructura;
 
     CLASS forma_terreno =
-      id : MANDATORY 0 .. 9999999999;
       nombre : MANDATORY TEXT*120;
     END forma_terreno;
 
     CLASS fuente =
-      id : MANDATORY 0 .. 9999999999;
       descripcion : MANDATORY TEXT*255;
       fecha : MANDATORY INTERLIS.XMLDate;
     END fuente;
 
     CLASS gp_antioquia =
-      gid : MANDATORY 0 .. 9999999999;
       ucsuelo : TEXT*10;
       s_uc : TEXT*254;
       s_uc_fase : TEXT*254;
@@ -297,12 +272,10 @@ VERSION "2019-12-11" =
     END gp_antioquia;
 
     CLASS inundacion =
-      id : MANDATORY 0 .. 9999999999;
       nombre : MANDATORY TEXT*120;
     END inundacion;
 
     CLASS letra_horizonte =
-      id : MANDATORY 0 .. 9999999999;
       letra : MANDATORY TEXT*3;
       UNIQUE letra;
     END letra_horizonte;
@@ -324,7 +297,6 @@ VERSION "2019-12-11" =
       id : 0 .. 9999999999;
       nombre : TEXT*100;
       fuente : TEXT*250;
-      id_l : MANDATORY 0 .. 9999999999;
     END leyenda_ini_;
 
     CLASS leyenda_nueva =
@@ -347,28 +319,23 @@ VERSION "2019-12-11" =
     END leyenda_nueva;
 
     CLASS limitante_profundidad =
-      id : MANDATORY 0 .. 9999999999;
       codigo : MANDATORY 0 .. 9999999999;
       descripcion : MANDATORY TEXT*70;
     END limitante_profundidad;
 
     CLASS localizacion =
-      id : MANDATORY 0 .. 9999999999;
     END localizacion;
 
     CLASS material_parental =
-      id : MANDATORY 0 .. 9999999999;
       nombre : MANDATORY TEXT*120;
     END material_parental;
 
     CLASS nomenclatura =
-      id : MANDATORY 0 .. 9999999999;
       nombre : MANDATORY TEXT*5;
       descripcion : TEXT*120;
     END nomenclatura;
 
     CLASS observacion =
-      id : MANDATORY 0 .. 9999999999;
       prof_inicial : MANDATORY 0 .. 9999999999;
       prof_final : MANDATORY 0 .. 9999999999;
       id_nomenclatura : MANDATORY 0 .. 9999999999;
@@ -393,25 +360,21 @@ VERSION "2019-12-11" =
     END observacion;
 
     CLASS paisaje =
-      id : MANDATORY 0 .. 9999999999;
       nombre : MANDATORY TEXT*100;
     END paisaje;
 
     CLASS suelos_paramos =
-      id : MANDATORY 0 .. 9999999999;
       sim_nuevo : MANDATORY TEXT*5;
       fase : MANDATORY TEXT*5;
     END suelos_paramos;
 
     CLASS pedregosidad =
-      id : MANDATORY 0 .. 9999999999;
       descripcion : MANDATORY TEXT*2;
       frag_sup : MANDATORY 0 .. 9999999999;
       frag_suelo : MANDATORY 0 .. 9999999999;
     END pedregosidad;
 
     CLASS perfil =
-      id : MANDATORY 0 .. 9999999999;
       codigo : TEXT*10;
       ucs : TEXT*10;
       clima : 0 .. 9999999999;
@@ -428,7 +391,6 @@ VERSION "2019-12-11" =
     END perfil;
 
     CLASS quimica =
-      id : MANDATORY 0 .. 9999999999;
       perfil : MANDATORY TEXT*10;
       profundidades : MANDATORY TEXT*15;
       simbolo : TEXT*20;
@@ -454,25 +416,21 @@ VERSION "2019-12-11" =
     END quimica;
 
     CLASS relieve =
-      id : MANDATORY 0 .. 9999999999;
       nombre : MANDATORY TEXT*120;
     END relieve;
 
     CLASS salinidad =
-      id : MANDATORY 0 .. 9999999999;
       codigo : MANDATORY 0 .. 9999999999;
       descripcion : MANDATORY TEXT*50;
     END salinidad;
 
     CLASS unidad_omitida =
-      id : MANDATORY 0 .. 9999999999;
       sim_nuevo : TEXT*15;
       sim_anti : TEXT*15;
       dpto : TEXT*60;
     END unidad_omitida;
 
     CLASS subclase_agrologica =
-      id : MANDATORY 0 .. 9999999999;
       nombre : MANDATORY TEXT*120;
     END subclase_agrologica;
 
@@ -596,16 +554,13 @@ VERSION "2019-12-11" =
       pp : TEXT*255;
       kc : TEXT*255;
       ce : TEXT*255;
-      id : MANDATORY 0 .. 9999999999;
     END suelos_variables;
 
     CLASS tipo_observacion =
-      id : MANDATORY 0 .. 9999999999;
       nombre : MANDATORY TEXT*120;
     END tipo_observacion;
 
     CLASS unidad_cartografica_medicion =
-      id : MANDATORY 0 .. 9999999999;
       simbolo : MANDATORY TEXT*10;
     END unidad_cartografica_medicion;
 

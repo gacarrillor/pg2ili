@@ -7,14 +7,12 @@ VERSION "2019-12-11" =
   TOPIC My_Topic =
       
     CLASS capacidad =
-      id : MANDATORY 0 .. 9999999999;
       id_fase_cartografica : MANDATORY 0 .. 9999999999;
       capacidad : MANDATORY TEXT*7;
       descripcion : MANDATORY TEXT*300;
     END capacidad;
 
     CLASS fase_cartografica =
-      id : MANDATORY 0 .. 9999999999;
       simbolo : MANDATORY TEXT*8;
       id_pendiente : MANDATORY 0 .. 9999999999;
       id_pedregosidad : 0 .. 9999999999;
@@ -28,7 +26,6 @@ VERSION "2019-12-11" =
     END fase_cartografica;
 
     CLASS unidad_cartografica =
-      id : MANDATORY 0 .. 9999999999;
       sigla : MANDATORY TEXT*15;
       nombre : MANDATORY TEXT*100;
       paisaje : MANDATORY TEXT*150;

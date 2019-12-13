@@ -1,0 +1,38 @@
+INTERLIS 2.3;
+
+MODEL My_Model (en)
+AT "mailto:gcarrillo@linuxmail.org"
+VERSION "2019-12-11" =
+  IMPORTS ISO19107_PLANAS_V1;
+
+  TOPIC My_Topic =
+
+    CLASS a =
+      id : MANDATORY 0 .. 9999999999;
+      any_value : 0.00 .. 99999999.99;
+    END a;
+
+    CLASS b =
+      id : MANDATORY 0 .. 9999999999;
+    END b;
+
+    CLASS polygons =
+      id : MANDATORY 0 .. 9999999999;
+      geom : MANDATORY ISO19107_PLANAS_V1.GM_MultiSurface3D;
+    END polygons;
+
+    ASSOCIATION =
+      b -- {0..1} b;
+      polygon_id -- {1} polygons;
+    END;
+
+    ASSOCIATION =
+      role_a -- {0..*} a;
+      role_b -- {0..*} b;
+      id : MANDATORY 0 .. 9999999999;
+      name : TEXT*12;
+    END;
+
+  END My_Topic;
+
+END My_Model.
