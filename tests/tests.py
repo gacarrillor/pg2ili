@@ -23,6 +23,8 @@ SQL9 = "test9.sql"
 ILI9 = "res9.ili"
 SQL10 = "test10.sql"
 ILI10 = "res10.ili"
+SQL11 = "test11.sql"
+ILI11 = "res11.ili"
 
 class TestPG2ILI(unittest.TestCase):
 
@@ -116,6 +118,16 @@ class TestPG2ILI(unittest.TestCase):
         self.assertEqual(len(pg2ili.pg_foreign_keys), 0)
         self.assertEqual(len(pg2ili.m_n_associations), 1)
         self.assertTrue(self.compare_ili_to_str(ILI10, ili_string), "Test 10 failed!")
+
+    def test_sql11(self):
+        print('INFO: Validating pg2ili "numeric(p, s)" types...')
+        pg2ili = PG2ILI(SQL11)
+        ili_string = pg2ili.convert()
+        self.assertEqual(len(pg2ili.pg_primary_keys), 0)
+        self.assertEqual(len(pg2ili.pg_uniques), 0)
+        self.assertEqual(len(pg2ili.pg_foreign_keys), 0)
+        self.assertEqual(len(pg2ili.m_n_associations), 0)
+        self.assertTrue(self.compare_ili_to_str(ILI11, ili_string), "Test 11 failed!")
 
     def compare_ili_to_str(self, ili_file, ili_string):
         file_contents = ""

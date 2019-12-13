@@ -2,7 +2,7 @@ INTERLIS 2.3;
 
 MODEL My_Model (en)
 AT "mailto:gcarrillo@linuxmail.org"
-VERSION "2019-10-11" =
+VERSION "2019-12-11" =
   IMPORTS ISO19107_PLANAS_V1;
 
   TOPIC My_Topic =

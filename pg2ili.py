@@ -46,6 +46,9 @@ class PG2ILI:
         "real": "NUMERIC.",
         "float": "NUMERIC.",
         "double precision": "NUMERIC.",
+        "numeric(p,s)": "NUMERIC(p).n",
+        "numeric(n)": "NUMERIC(p)",
+        "numeric": "NUMERIC.",
         "boolean": "BOOLEAN",
         "character varying(n)": "TEXT*n",
         "varchar(n)": "TEXT*n",
@@ -58,7 +61,11 @@ class PG2ILI:
         "time": "INTERLIS.XMLTime",
         "geometry(t)": "GEOMETRY"
     }
-    PG_TYPES_COMPILED = {re.compile("^{}".format(k.replace("(n)", "([\s]*?\(\d+\))").replace("(t)", "([\s]*?\([\w\,\s]+\))"), re.I)): k for k, v in PG_TYPES.items()}
+    PG_TYPES_COMPILED = {
+        re.compile("^{}".format(k.
+                                replace("(n)", "([\s]*?\(\d+\))").
+                                replace("(t)", "([\s]*?\([\w\,\s]+\))").
+                                replace("(p,s)", "([\s]*?\([\d]+\,[\s\d]+\))"), re.I)): k for k, v in PG_TYPES.items()}
 
     GEOMETRY_TYPES = {
         "point": {"2d": "GM_Point2D", "3d": "GM_Point3D"},
@@ -289,17 +296,29 @@ class PG2ILI:
         if DEBUG: print("[convert_type]", pg_type, ili_type, extra)
         res = ""
         n = 0
+        p = 0
+        s = 0
         t = ""
         if extra:
             n = extra[0].strip().strip("(").strip(")")
             if ili_type == "GEOMETRY":
                 t = n.split(",")[0]
+            elif ili_type == "NUMERIC(p)":
+                p = n
+            elif ili_type == "NUMERIC(p).n":
+                p, s = n.split(",")
         if ili_type == "NUMERIC":
             res = "0 .. 9999999999"
         elif ili_type == "NUMERIC.":
             res = "0.00 .. 9999999999.99"
         elif ili_type == "NUMERIC.n":
-            res = "0.{} .. 9999999999.{}".format("0"*int(n), "9"*int(n))
+            res = "0.{} .. 9999999999.{}".format("0" * int(n), "9" * int(n))
+        elif ili_type == "NUMERIC(p).n":
+            res = "0.{scale0} .. {before_decimal}.{scale9}".format(scale0="0" * int(s),
+                                                                   scale9="9" * int(s),
+                                                                   before_decimal="9" * (int(p) - int(s)))
+        elif ili_type == "NUMERIC(p)":
+            res = "0 .. {}".format("9" * int(p))
         elif ili_type == "TEXT":
             res = "TEXT*255"
         elif ili_type == "TEXT*n":
@@ -505,7 +524,7 @@ if __name__== "__main__":
 
 # TODO:
 #       Default values
-#       More constraints
+#       More constraints (ranges)
 #
 #       If a relation references a primary key, use t_id instead
 #       Remove primary key attributes from ili classes (Optional?)
