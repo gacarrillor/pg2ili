@@ -1,6 +1,8 @@
 # pg2ili
 Python script to import tables from a PostgreSQL/PostGIS SQL (DDL) file to [INTERLIS](https://www.interlis.ch/en).
 
+![pg2ili](https://user-images.githubusercontent.com/652785/70843347-9fe97f80-1dfe-11ea-9a18-3780fd41d965.png)
+
 pg2ili was created for saving time in migration or reverse engineering processes.
 
 If you start from a PostgreSQL/PostGIS database and want to obtain a model in INTERLIS from it, you can use pg2ili to get all your PG tables written as INTERLIS classes. Then you can open the obtained ili file in [UML/INTERLIS Editor](https://github.com/AgenciaImplementacion/umleditor/) and adjust your model, i.e., add meta-attributes, adjust numeric ranges and the like.
