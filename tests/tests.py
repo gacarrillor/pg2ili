@@ -28,6 +28,9 @@ ILI11 = "res11.ili"
 SQL12 = "test12.sql"
 ILI12a = "res12a.ili"
 ILI12b = "res12b.ili"
+SQL13 = "test13.sql"
+ILI13 = ILI1
+
 
 class TestPG2ILI(unittest.TestCase):
 
@@ -149,6 +152,14 @@ class TestPG2ILI(unittest.TestCase):
         self.assertEqual(len(pg2ili.pg_foreign_keys), 1)
         self.assertEqual(len(pg2ili.m_n_associations), 1)
         self.assertTrue(self.compare_ili_to_str(ILI12b, ili_string), "Test 12b failed!")
+
+    def test_sql13(self):
+        print('INFO: Validating pg2ili single table with schema in geometry column...')
+        pg2ili = PG2ILI(SQL13)
+        ili_string = pg2ili.convert()
+        self.assertEqual(len(pg2ili.pg_primary_keys), 0)
+        self.assertEqual(len(pg2ili.pg_uniques), 0)
+        self.assertTrue(self.compare_ili_to_str(ILI13, ili_string), "Test 13 failed!")
 
     def compare_ili_to_str(self, ili_file, ili_string):
         file_contents = ""

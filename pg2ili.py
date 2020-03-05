@@ -62,10 +62,10 @@ class PG2ILI:
         "geometry(t)": "GEOMETRY"
     }
     PG_TYPES_COMPILED = {
-        re.compile("^{}".format(k.
-                                replace("(n)", "([\s]*?\(\d+\))").
-                                replace("(t)", "([\s]*?\([\w\,\s]+\))").
-                                replace("(p,s)", "([\s]*?\([\d]+\,[\s\d]+\))"), re.I)): k for k, v in PG_TYPES.items()}
+        re.compile("^[\w\.]*?{}".format(k.
+                                        replace("(n)", "([\s]*?\(\d+\))").
+                                        replace("(t)", "([\s]*?\([\w\,\s]+\))").
+                                        replace("(p,s)", "([\s]*?\([\d]+\,[\s\d]+\))"), re.I)): k for k, v in PG_TYPES.items()}
 
     GEOMETRY_TYPES = {
         "point": {"2d": "GM_Point2D", "3d": "GM_Point3D"},
