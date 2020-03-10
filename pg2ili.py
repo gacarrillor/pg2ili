@@ -22,6 +22,7 @@ import re
 # CONFIG
 DEBUG = False
 PREFER_3D = True
+USE_SCHEMA_NAME = True  # If you're using multiple schemas, this is a must!
 GEOMETRY_MODEL_NAME = "ISO19107_PLANAS_V1"
 IGNORE_TABLES = ["t_ili2db_attrname",
                  "t_ili2db_basket",
@@ -35,6 +36,14 @@ IGNORE_TABLES = ["t_ili2db_attrname",
                  "t_ili2db_table_prop",
                  "t_ili2db_trafo"]
 IGNORE_ATTRIBUTES = ["t_ili_tid"]  # Primary keys are needed for handling data, so we don't add them to this list
+INTERMEDIATE_TABLE_DO_NOT_DELETE = ["qgep_od.zone",
+                                    "qgep_od.surface_water_bodies",
+                                    "qgep_od.hydr_geometry",
+                                    "qgep_od.organisation",
+                                    "qgep_od.wastewater_node",
+                                    "qgep_od.aquifier",
+                                    "qgep_od.control_center",
+                                    "qgep_od.river"]
 
 
 class PG2ILI:
@@ -62,10 +71,10 @@ class PG2ILI:
         "geometry(t)": "GEOMETRY"
     }
     PG_TYPES_COMPILED = {
-        re.compile("^[\w\.]*?{}".format(k.
-                                        replace("(n)", "([\s]*?\(\d+\))").
-                                        replace("(t)", "([\s]*?\([\w\,\s]+\))").
-                                        replace("(p,s)", "([\s]*?\([\d]+\,[\s\d]+\))"), re.I)): k for k, v in PG_TYPES.items()}
+        re.compile("^{}{}".format('[\w\.]*?' if USE_SCHEMA_NAME else '',
+                                  k.replace("(n)", "([\s]*?\(\d+\))").
+                                    replace("(t)", "([\s]*?\([\w\,\s]+\))").
+                                    replace("(p,s)", "([\s]*?\([\d]+\,[\s\d]+\))"), re.I)): k for k, v in PG_TYPES.items()}
 
     GEOMETRY_TYPES = {
         "point": {"2d": "GM_Point2D", "3d": "GM_Point3D"},
@@ -97,6 +106,7 @@ class PG2ILI:
         self.omit_primary_keys = omit_primary_keys
 
         self.re_create_table = re.compile("^CREATE TABLE (?:IF NOT EXISTS )?([\"\w\.]+)\s\(", re.I)
+        self.re_inherits_table = re.compile("^INHERITS \(([\w\.\,\s\"]+)\)", re.I)
         self.re_end_create_table = re.compile(r"\);$")
         self.re_alter_table = re.compile("^ALTER TABLE (?:ONLY )?([\"\w\.]+)", re.I)
         self.re_alter_table_one_line = re.compile("^ALTER TABLE (?:ONLY )?([\"\w\.]+).*?;$", re.I)
@@ -109,11 +119,14 @@ class PG2ILI:
         self.interlis_content = ""
         self.any_geometry = False
         self.pg_tables = dict()  # {Class name: [[attr_name, type], [attr_name, type], ... [attr_name, type]]}
+        self.pg_inherits = dict()  # {Class name: [table1, table2, ..., tablen]}
         self.pg_not_nulls = dict()  # {Class name: [attr1, attr2, ..., attrN]}
         self.pg_uniques = dict()  # {Class name: [[attrs_unique1], [attrs_another_unique], ...]}
         self.pg_primary_keys = dict()  # {Class name: [attr1, attr2, ..., attrN]}
         self.pg_foreign_keys = dict()  # {Class name: [fk1_def, fk2_def, ..., fkN_def]}, fk_def = [[referencing_attrs], referenced_table, [referenced_attrs], referencing_cardinality, referenced_cardinality]
         self.m_n_associations = list()  # [[foreign_key_def1, foreign_key_def2, [[attr_name, type, NN],...,[]], skip_attribute_names, [unique_attr1, ... unique_attrN]], ..., [...]]
+
+        self.sequences = dict()  # To handle (multiple) role names of referenced tables {}
 
     def convert(self):
         # Parse file
@@ -163,6 +176,9 @@ class PG2ILI:
                         self.parse_pg_alter_table(sql_alter_table)
                         sql_alter_table = ""  # Get it ready for the next constraint
 
+        # Resolve table inheritance
+        self.resolve_inheritance()
+
         # Convert to INTERLIS
         self.interlis_content += self.get_header()
 
@@ -187,9 +203,10 @@ class PG2ILI:
         if DEBUG: print("\n[parse_pg_table]", pg_table_sql)
         first_chunk = pg_table_sql.split("(")[0] + "("
         result = self.re_create_table.search(first_chunk)
-        class_name = self.normalize_class_name(result.group(1).strip())
-        if class_name in IGNORE_TABLES:
+
+        if self.ignore_table(result.group(1).strip()):
             return
+        class_name = self.normalize_class_name(result.group(1).strip())
 
         pg_table_sql = pg_table_sql[len(first_chunk)+1:]
         attributes = list()
@@ -199,12 +216,21 @@ class PG2ILI:
             if not line or line == ");": continue
             if DEBUG: print("[parse_pg_table]", line)
 
+            # Check for INHERITS
+            result = self.re_inherits_table.search(line)
+            if result:
+                self.pg_inherits[class_name] = [self.normalize_class_name(part) for part in result.group(1).split(",")]
+                if DEBUG: print("[parse_pg_table] INHERITS found!: ", self.pg_inherits)
+                continue
+
+            # Check for fields
             field_name = line.split(" ")[0]
             if field_name in IGNORE_ATTRIBUTES:
                 continue
 
             line = line[len(field_name)+1:]  # Preserve the rest
             ili_type = ""
+            field_name = self.normalize_attr_name(field_name)
             for k,v in self.PG_TYPES_COMPILED.items():
                 result = k.search(line)
                 if result:
@@ -215,13 +241,13 @@ class PG2ILI:
                 if DEBUG: print("###[WARNING]### Could not convert line: '{} {}'".format(field_name, line))
                 continue
 
+            attributes.append([field_name, ili_type])
+
             if self.NOT_NULL in line:
                 if not class_name in self.pg_not_nulls:
                     self.pg_not_nulls[class_name] = [field_name]
                 else:
                     self.pg_not_nulls[class_name].append(field_name)
-
-            attributes.append([field_name, ili_type])
 
         self.pg_tables[class_name] = attributes
 
@@ -249,25 +275,27 @@ class PG2ILI:
     def parse_pg_primary_key_constraint(self, pg_unique_sql, groups):
         if DEBUG: print("\n[parse_pg_primary_key_constraint]", pg_unique_sql)
 
-        class_name = self.normalize_class_name(groups[0])
-        if class_name in IGNORE_TABLES:
+        if self.ignore_table(groups[0]):
             return
+        class_name = self.normalize_class_name(groups[0])
 
-        primary_key_attrs = [attr_name.strip() for attr_name in groups[1].split(",") if not attr_name.strip() in IGNORE_ATTRIBUTES]
+        primary_key_attrs = [self.normalize_attr_name(attr_name) for attr_name in groups[1].split(",") if not attr_name.strip() in IGNORE_ATTRIBUTES]
 
         self.pg_primary_keys[class_name] = primary_key_attrs
 
     def parse_pg_foreign_key_constraint(self, pg_unique_sql, groups):
         if DEBUG: print("\n[parse_pg_foreign_key_constraint]", pg_unique_sql)
 
-        class_name = self.normalize_class_name(groups[0])  # Referencing table
-        if class_name in IGNORE_TABLES:
+        if self.ignore_table(groups[0]):
             return
+        class_name = self.normalize_class_name(groups[0])  # Referencing table
 
         referencing_attrs = [attr_name.strip() for attr_name in groups[1].split(",")]
         for attr in referencing_attrs:
             if attr in IGNORE_ATTRIBUTES:
                 return
+
+        referencing_attrs = [self.normalize_attr_name(attr) for attr in referencing_attrs]
 
         parts = groups[2].split("(")
         referenced_table = self.normalize_class_name(parts[0])
@@ -275,6 +303,8 @@ class PG2ILI:
         for attr in referenced_attrs:
             if attr in IGNORE_ATTRIBUTES:
                 return
+
+        referenced_attrs = [self.normalize_attr_name(attr) for attr in referenced_attrs]
 
         referencing_cardinality = self.get_role_cardinality(class_name, referencing_attrs[0], "referencing")
         referenced_cardinality = self.get_role_cardinality(class_name, referencing_attrs[0], "referenced")
@@ -289,11 +319,11 @@ class PG2ILI:
     def parse_pg_unique_constraint(self, pg_unique_sql, groups):
         if DEBUG: print("\n[parse_pg_unique_constraint]", pg_unique_sql)
 
-        class_name = self.normalize_class_name(groups[0])
-        if class_name in IGNORE_TABLES:
+        if self.ignore_table(groups[0]):
             return
+        class_name = self.normalize_class_name(groups[0])
 
-        unique_attrs = [attr_name.strip() for attr_name in groups[1].split(",") if not attr_name.strip() in IGNORE_ATTRIBUTES]
+        unique_attrs = [self.normalize_attr_name(attr_name) for attr_name in groups[1].split(",") if not attr_name.strip() in IGNORE_ATTRIBUTES]
 
         if class_name in self.pg_uniques:
             self.pg_uniques[class_name].append(unique_attrs)
@@ -304,8 +334,8 @@ class PG2ILI:
         if DEBUG: print("[convert_type]", pg_type, ili_type, extra)
         res = ""
         n = 0
-        p = 0
-        s = 0
+        p = 0  # precision
+        s = 0  # scale
         t = ""
         if extra:
             n = extra[0].strip().strip("(").strip(")")
@@ -322,9 +352,10 @@ class PG2ILI:
         elif ili_type == "NUMERIC.n":
             res = "0.{} .. 9999999999.{}".format("0" * int(n), "9" * int(n))
         elif ili_type == "NUMERIC(p).n":
-            res = "0.{scale0} .. {before_decimal}.{scale9}".format(scale0="0" * int(s),
-                                                                   scale9="9" * int(s),
-                                                                   before_decimal="9" * (int(p) - int(s)))
+            res = "0{decimal_point}{scale0} .. {before_decimal}{decimal_point}{scale9}".format(decimal_point="." if int(s)>0 else "",
+                                                                                               scale0="0" * int(s),
+                                                                                               scale9="9" * int(s),
+                                                                                               before_decimal="9" * (int(p) - int(s)))
         elif ili_type == "NUMERIC(p)":
             res = "0 .. {}".format("9" * int(p))
         elif ili_type == "TEXT":
@@ -408,7 +439,8 @@ END {}.
         referencing_table = class_name
         referencing_fields, referenced_table, referenced_fields, referencing_cardinality, referenced_cardinality = foreign_key_def
 
-        ili_association += "\n      {} -- {{{}}} {};".format(referencing_table,  # Role
+        role_referenced_next_id = self.get_next_id_sequence(referenced_table)
+        ili_association += "\n      {} -- {{{}}} {};".format("role_{}{}".format(referenced_table, "_{}".format(role_referenced_next_id) if role_referenced_next_id else ""),  # Role
                                                              referencing_cardinality,
                                                              referencing_table)  # Class
         ili_association += "\n      {} -- {{{}}} {};".format(referencing_fields[0],  # Role
@@ -419,7 +451,7 @@ END {}.
         return ili_association
 
     def get_role_cardinality(self, table, attribute, table_type):
-        if DEBUG: print("\n[get_role_cardinality] NOT NULLs for {}:".format(table), self.pg_not_nulls[table] if table in self.pg_not_nulls else [])
+        if DEBUG: print("\n[get_role_cardinality] NOT NULLs for table '{}':".format(table), self.pg_not_nulls[table] if table in self.pg_not_nulls else [])
         cardinality = ""
         if table_type == 'referenced':
             cardinality = "1" if table in self.pg_not_nulls and attribute in self.pg_not_nulls[table] else "0..1"
@@ -472,13 +504,18 @@ END {}.
                     # Add relationship to M:N list
                     self.m_n_associations.append([foreign_key_defs, attrs, skip_attribute_names, uniques_to_store])
 
+        do_not_delete_intermediate_table = list()
+        for table in INTERMEDIATE_TABLE_DO_NOT_DELETE:
+            do_not_delete_intermediate_table.append(self.normalize_class_name(table))
+
         for class_name in classes_to_remove:
-            # Remove intermediate class from all other dicts
-            if class_name in self.pg_tables: del self.pg_tables[class_name]
-            if class_name in self.pg_not_nulls: del self.pg_not_nulls[class_name]
-            if class_name in self.pg_uniques: del self.pg_uniques[class_name]
-            if class_name in self.pg_primary_keys: del self.pg_primary_keys[class_name]
-            if class_name in self.pg_foreign_keys: del self.pg_foreign_keys[class_name]
+            if not class_name in do_not_delete_intermediate_table:
+                # Remove intermediate class from all other dicts
+                if class_name in self.pg_tables: del self.pg_tables[class_name]
+                if class_name in self.pg_not_nulls: del self.pg_not_nulls[class_name]
+                if class_name in self.pg_uniques: del self.pg_uniques[class_name]
+                if class_name in self.pg_primary_keys: del self.pg_primary_keys[class_name]
+                if class_name in self.pg_foreign_keys: del self.pg_foreign_keys[class_name]
 
     def get_ili_m_n_association(self, m_n_rel_def):
         if DEBUG: print("\n[get_ili_m_n_association]", m_n_rel_def)
@@ -490,13 +527,16 @@ END {}.
         referencing_fields1, referenced_table1, referenced_fields1, referencing_cardinality1, referenced_cardinality1 = foreign_key_defs[0]
         referencing_fields2, referenced_table2, referenced_fields2, referencing_cardinality2, referenced_cardinality2 = foreign_key_defs[1]
 
+        role_referenced1_next_id = self.get_next_id_sequence(referenced_table2)
+        role_referenced2_next_id = self.get_next_id_sequence(referenced_table1)
+
         role1 = referencing_fields1[0] if referencing_fields1[0] not in [attr[0] for attr in self.pg_tables[referenced_table1]] else referenced_table1
         role2 = referencing_fields2[0] if referencing_fields2[0] not in [attr[0] for attr in self.pg_tables[referenced_table2]] else referenced_table2
 
-        ili_association += "\n      {} -- {{{}}} {};".format(role1,
+        ili_association += "\n      {} -- {{{}}} {};".format("{}{}".format(role1, "_{}".format(role_referenced1_next_id) if role_referenced1_next_id else ""),  # Role
                                                              referencing_cardinality1,
                                                              referenced_table1)  # Class
-        ili_association += "\n      {} -- {{{}}} {};".format(role2,
+        ili_association += "\n      {} -- {{{}}} {};".format("{}{}".format(role2, "_{}".format(role_referenced2_next_id) if role_referenced2_next_id else ""),  # Role
                                                              referencing_cardinality2,
                                                              referenced_table2)  # Class
 
@@ -517,12 +557,93 @@ END {}.
         ili_association += "\n    END;\n\n"
         return ili_association
 
+    def resolve_inheritance(self):
+        """
+        If we find an INHERITS clause, we need to copy all attr/constraint definitions into the subclass
+        """
+        for k,v in self.pg_inherits.items():
+            # Copy attrs
+            for table in v:
+                for attr_list in self.pg_tables[table]:
+                    attr_names = [attr_list_base[0] for attr_list_base in self.pg_tables[k]]
+                    attr_index = -1
+                    if attr_list[0] in attr_names:
+                        attr_index = attr_names.index(attr_list[0])
+                    if attr_index == -1:  # Attr name not there, just add the attr list
+                        self.pg_tables[k].append(attr_list)
+                    else:  # Attr name already there, leave it as it is
+                        pass
+
+            # Copy NOT NULL constraints
+            if k not in self.pg_not_nulls:
+                self.pg_not_nulls[k] = list()
+            for table in v:
+                if table in self.pg_not_nulls:
+                    for attr in self.pg_not_nulls[table]:
+                        if attr not in self.pg_not_nulls[k]:
+                            self.pg_not_nulls[k].append(attr)
+
+            # Copy UNIQUE constraints
+            if k not in self.pg_uniques:
+                self.pg_uniques[k] = list()
+            for table in v:
+                if table in self.pg_uniques:
+                    for attr_list in self.pg_uniques[table]:
+                        if attr_list not in self.pg_uniques[k]:
+                            self.pg_uniques[k].append(attr_list)
+
+            # Copy PKs
+            # if k not in self.pg_primary_keys:
+            #     self.pg_primary_keys[k] = list()
+            # for table in v:
+            #     if table in self.pg_primary_keys:
+            #         for attr in self.pg_primary_keys[table]:
+            #             if attr not in self.pg_primary_keys[k]:
+            #                 self.pg_primary_keys[k].append(attr)
+
+            # Copy FKs
+            if k not in self.pg_foreign_keys:
+                self.pg_foreign_keys[k] = list()
+            for table in v:
+                if table in self.pg_foreign_keys:
+                    for fk_list in self.pg_foreign_keys[table]:
+                        if fk_list not in self.pg_foreign_keys[k]:
+                            self.pg_foreign_keys[k].append(fk_list)
+        # self.pg_primary_keys = dict()  # {Class name: [attr1, attr2, ..., attrN]}
+        # self.pg_foreign_keys = dict()  # {Class name: [fk1_def, fk2_def, ..., fkN_def]}, fk_def = [[referencing_attrs], referenced_table, [referenced_attrs], referencing_cardinality, referenced_cardinality]
+        # self.m_n_associations = list()  # [[foreign_key_def1, foreign_key_def2, [[attr_name, type, NN],...,[]], skip_attribute_names, [unique_attr1, ... unique_attrN]], ..., [...]]
+
+
     def normalize_class_name(self, name):
         parts = name.split(".")
-        if len(parts) == 2:
-            return parts[1]
+        if len(parts) == 2 and not USE_SCHEMA_NAME:
+            return parts[1].strip()
 
-        return name
+        return name.replace(".", "_").strip()
+
+    def normalize_attr_name(self, name):
+        if name.startswith("_"):
+            name = name[1:]
+
+        name = name.replace("\"", "")
+
+        return name.strip()
+
+    def ignore_table(self, class_name):
+        if USE_SCHEMA_NAME:
+            parts = class_name.split(".")
+            if len(parts) == 2:
+                return parts[1] in IGNORE_TABLES
+
+        return class_name in IGNORE_TABLES
+
+    def get_next_id_sequence(self, key):
+        if key in self.sequences:
+            self.sequences[key] += 1
+        else:
+            self.sequences[key] = 0
+
+        return self.sequences[key]
 
 
 if __name__== "__main__":
@@ -541,3 +662,4 @@ if __name__== "__main__":
 # TODO:
 #       Default values
 #       More constraints (ranges)
+#       Comments

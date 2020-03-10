@@ -38,7 +38,7 @@ ALTER TABLE ONLY b
 ALTER TABLE ONLY public.intermediate_table
     ADD CONSTRAINT intermediate_table_role_a_fkey FOREIGN KEY (role_a) REFERENCES public.a(id);
 
-ALTER TABLE ONLY publi.intermediate_table
+ALTER TABLE ONLY public.intermediate_table
     ADD CONSTRAINT intermediate_table_role_b_fkey FOREIGN KEY (role_b) REFERENCES public.b(id);
 --
 -- PostgreSQL database dump complete
