@@ -1,34 +1,41 @@
+import os.path
 import nose2
 import unittest
 
 from pg2ili import PG2ILI
 
-SQL1 = "test1.sql"
-ILI1 = "res1.ili"
-SQL2 = "test2.sql"
-ILI2 = "res2.ili"
-SQL3 = "test3.sql"
-ILI3 = "res3.ili"
-SQL4 = "test4.sql"
-ILI4 = "res4.ili"
-SQL5 = "test5.sql"
-ILI5 = "res5.ili"
-SQL6 = "test6.sql"
-ILI6 = "res6.ili"
-SQL7 = "test7.sql"
-ILI7 = "res7.ili"
-SQL8 = "test8.sql"
-ILI8 = "res8.ili"
-SQL9 = "test9.sql"
-ILI9 = "res9.ili"
-SQL10 = "test10.sql"
-ILI10 = "res10.ili"
-SQL11 = "test11.sql"
-ILI11 = "res11.ili"
-SQL12 = "test12.sql"
-ILI12a = "res12a.ili"
-ILI12b = "res12b.ili"
-SQL13 = "test13.sql"
+
+def real_path(filename: str):
+    tests_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'tests')
+    return os.path.join(tests_path, filename)
+
+
+SQL1 = real_path(filename="test1.sql")
+ILI1 = real_path("res1.ili")
+SQL2 = real_path("test2.sql")
+ILI2 = real_path("res2.ili")
+SQL3 = real_path("test3.sql")
+ILI3 = real_path("res3.ili")
+SQL4 = real_path("test4.sql")
+ILI4 = real_path("res4.ili")
+SQL5 = real_path("test5.sql")
+ILI5 = real_path("res5.ili")
+SQL6 = real_path("test6.sql")
+ILI6 = real_path("res6.ili")
+SQL7 = real_path("test7.sql")
+ILI7 = real_path("res7.ili")
+SQL8 = real_path("test8.sql")
+ILI8 = real_path("res8.ili")
+SQL9 = real_path("test9.sql")
+ILI9 = real_path("res9.ili")
+SQL10 = real_path("test10.sql")
+ILI10 = real_path("res10.ili")
+SQL11 = real_path("test11.sql")
+ILI11 = real_path("res11.ili")
+SQL12 = real_path("test12.sql")
+ILI12a = real_path("res12a.ili")
+ILI12b = real_path("res12b.ili")
+SQL13 = real_path("test13.sql")
 ILI13 = ILI1
 
 
@@ -159,6 +166,7 @@ class TestPG2ILI(unittest.TestCase):
         ili_string = pg2ili.convert()
         self.assertEqual(len(pg2ili.pg_primary_keys), 0)
         self.assertEqual(len(pg2ili.pg_uniques), 0)
+        print(ili_string)
         self.assertTrue(self.compare_ili_to_str(ILI13, ili_string), "Test 13 failed!")
 
     def compare_ili_to_str(self, ili_file, ili_string):
@@ -166,10 +174,10 @@ class TestPG2ILI(unittest.TestCase):
         with open(ili_file) as f:
             file_contents = f.read()
 
-        file_lines = file_contents.split("\n")
         str_lines = ili_string.split("\n")
+        file_lines = file_contents.split("\n")
 
-        if len(file_lines) != len(str_lines):
+        if len(str_lines) != len(file_lines):
             print("Number of lines in ili string ({}) differs from number of lines in ili file ({})".format(
                 len(str_lines),
                 len(file_lines)))

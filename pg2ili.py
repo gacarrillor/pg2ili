@@ -22,7 +22,7 @@ import re
 # CONFIG
 DEBUG = False
 PREFER_3D = True
-USE_SCHEMA_NAME = True  # If you're using multiple schemas, this is a must!
+USE_SCHEMA_NAME = False  # Add the schema name in output class names
 GEOMETRY_MODEL_NAME = "ISO19107_PLANAS_V1"
 IGNORE_TABLES = ["t_ili2db_attrname",
                  "t_ili2db_basket",
@@ -71,7 +71,7 @@ class PG2ILI:
         "geometry(t)": "GEOMETRY"
     }
     PG_TYPES_COMPILED = {
-        re.compile("^{}{}".format('[\w\.]*?' if USE_SCHEMA_NAME else '',
+        re.compile("^{}{}".format('[\w\.]*?',
                                   k.replace("(n)", "([\s]*?\(\d+\))").
                                     replace("(t)", "([\s]*?\([\w\,\s]+\))").
                                     replace("(p,s)", "([\s]*?\([\d]+\,[\s\d]+\))"), re.I)): k for k, v in PG_TYPES.items()}
@@ -112,7 +112,7 @@ class PG2ILI:
         self.re_alter_table_one_line = re.compile("^ALTER TABLE (?:ONLY )?([\"\w\.]+).*?;$", re.I)
         self.re_unique_constraint = re.compile("^ALTER TABLE (?:ONLY )?([\"\w\.]+)\sADD CONSTRAINT [\w\.]+ UNIQUE \(([\w\.\,\s]+)\);$", re.I)
         self.re_primary_key_constraint = re.compile("^ALTER TABLE (?:ONLY )?([\"\w\.]+)\sADD CONSTRAINT [\w\.]+ PRIMARY KEY \(([\w\.\,\s]+)\);$", re.I)
-        self.re_foreign_key_constraint = re.compile("^ALTER TABLE (?:ONLY )?([\"\w\.]+)\sADD CONSTRAINT [\w\.]+ FOREIGN KEY \(([\w\.\,]+)\) REFERENCES ([\w\.\,\(\)]+)(?: .*)?;$", re.I)
+        self.re_foreign_key_constraint = re.compile("^ALTER TABLE (?:ONLY )?([\"\w\.]+)\sADD CONSTRAINT [\"\w\.]+ FOREIGN KEY \(([\"\w\.\,]+)\) REFERENCES ([\"\w\.\,\(\)]+)(?: .*)?;$", re.I)
 
         self.currently_inside_table = False
         self.currently_inside_alter_table = False
@@ -439,8 +439,9 @@ END {}.
         referencing_table = class_name
         referencing_fields, referenced_table, referenced_fields, referencing_cardinality, referenced_cardinality = foreign_key_def
 
-        role_referenced_next_id = self.get_next_id_sequence(referenced_table)
-        ili_association += "\n      {} -- {{{}}} {};".format("role_{}{}".format(referenced_table, "_{}".format(role_referenced_next_id) if role_referenced_next_id else ""),  # Role
+        # role_referencing_next_id = self.get_next_id_sequence(referencing_table)
+        role_referencing_next_id = 0
+        ili_association += "\n      {} -- {{{}}} {};".format("{}{}".format(referencing_table, "_{}".format(role_referencing_next_id) if role_referencing_next_id else ""),  # Role
                                                              referencing_cardinality,
                                                              referencing_table)  # Class
         ili_association += "\n      {} -- {{{}}} {};".format(referencing_fields[0],  # Role
@@ -619,6 +620,7 @@ END {}.
         if len(parts) == 2 and not USE_SCHEMA_NAME:
             return parts[1].strip()
 
+        name = name.replace("\"", "")
         return name.replace(".", "_").strip()
 
     def normalize_attr_name(self, name):
@@ -630,12 +632,11 @@ END {}.
         return name.strip()
 
     def ignore_table(self, class_name):
-        if USE_SCHEMA_NAME:
-            parts = class_name.split(".")
-            if len(parts) == 2:
-                return parts[1] in IGNORE_TABLES
-
-        return class_name in IGNORE_TABLES
+        parts = class_name.split(".")
+        if len(parts) == 2:  # Schema found?
+            return parts[1] in IGNORE_TABLES
+        else:
+            return class_name in IGNORE_TABLES
 
     def get_next_id_sequence(self, key):
         if key in self.sequences:
@@ -646,7 +647,7 @@ END {}.
         return self.sequences[key]
 
 
-if __name__== "__main__":
+if __name__ == "__main__":
     sql_file = sys.argv[1]
     model_name = sys.argv[2] if len(sys.argv) > 2 else "My_Model"
     topic_name = sys.argv[3] if len(sys.argv) > 3 else "My_Topic"
@@ -663,3 +664,4 @@ if __name__== "__main__":
 #       Default values
 #       More constraints (ranges)
 #       Comments
+#       Domains
