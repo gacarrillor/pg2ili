@@ -32,7 +32,7 @@ INHERITS (qgep_sys.value_list_base);
 
 CREATE TABLE simple (
     id integer NOT NULL
-)
+);
 
 CREATE TABLE qgep_od.zone (
     obj_id character varying(16) DEFAULT qgep_sys.generate_oid('qgep_od'::text, 'zone'::text) NOT NULL,

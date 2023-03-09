@@ -37,6 +37,8 @@ ILI12a = real_path("res12a.ili")
 ILI12b = real_path("res12b.ili")
 SQL13 = real_path("test13.sql")
 ILI13 = ILI1
+SQL14 = real_path("test14.sql")
+ILI14 = real_path("res14.ili")
 
 
 class TestPG2ILI(unittest.TestCase):
@@ -166,8 +168,19 @@ class TestPG2ILI(unittest.TestCase):
         ili_string = pg2ili.convert()
         self.assertEqual(len(pg2ili.pg_primary_keys), 0)
         self.assertEqual(len(pg2ili.pg_uniques), 0)
-        print(ili_string)
         self.assertTrue(self.compare_ili_to_str(ILI13, ili_string), "Test 13 failed!")
+
+    def test_sql14(self):
+        print('INFO: Validating pg2ili INHERITS, schema names...')
+        # TODO: 1) Unique with 2 fields, where one is FK (line 51 test14.sql)
+        # TODO: 2) Why the M:N role for zone is called zone? Should be obj_id
+        pg2ili = PG2ILI(SQL14)
+        ili_string = pg2ili.convert()
+        self.assertEqual(len(pg2ili.pg_primary_keys), 0)
+        self.assertEqual(len(pg2ili.pg_uniques), 3)
+        self.assertEqual(len(pg2ili.pg_foreign_keys), 3)
+        self.assertEqual(len(pg2ili.m_n_associations), 1)
+        self.assertTrue(self.compare_ili_to_str(ILI14, ili_string), "Test 14 failed!")
 
     def compare_ili_to_str(self, ili_file, ili_string):
         file_contents = ""
@@ -195,6 +208,7 @@ class TestPG2ILI(unittest.TestCase):
     @classmethod
     def tearDownClass(self):
         print('INFO: Tear down...')
+
 
 if __name__ == '__main__':
     nose2.main()

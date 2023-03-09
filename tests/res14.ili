@@ -1,0 +1,92 @@
+INTERLIS 2.3;
+
+MODEL My_Model (en)
+AT "mailto:gcarrillo@linuxmail.org"
+VERSION "2019-12-11" =
+  IMPORTS ISO19107_PLANAS_V1;
+
+  TOPIC My_Topic =
+
+    CLASS value_list_base =
+      code : MANDATORY 0 .. 9999999999;
+      value_en : TEXT*50;
+      value_de : TEXT*50;
+      value_fr : TEXT*50;
+      value_it : TEXT*60;
+      value_ro : TEXT*50;
+      abbr_en : TEXT*3;
+      abbr_de : TEXT*3;
+      abbr_fr : TEXT*3;
+      abbr_it : TEXT*3;
+      abbr_ro : TEXT*3;
+      active : BOOLEAN;
+    END value_list_base;
+
+    CLASS drainage_system_kind =
+      code : MANDATORY 0 .. 9999999999;
+      value_en : TEXT*50;
+      value_de : TEXT*50;
+      value_fr : TEXT*50;
+      value_it : TEXT*60;
+      value_ro : TEXT*50;
+      abbr_en : TEXT*3;
+      abbr_de : TEXT*3;
+      abbr_fr : TEXT*3;
+      abbr_it : TEXT*3;
+      abbr_ro : TEXT*3;
+      active : BOOLEAN;
+    END drainage_system_kind;
+
+    CLASS drainage_system_kind2 =
+      active : MANDATORY 0 .. 9999999999;
+      code : MANDATORY 0 .. 9999999999;
+      value_en : TEXT*50;
+      value_de : TEXT*50;
+      value_fr : TEXT*50;
+      value_it : TEXT*60;
+      value_ro : TEXT*50;
+      abbr_en : TEXT*3;
+      abbr_de : TEXT*3;
+      abbr_fr : TEXT*3;
+      abbr_it : TEXT*3;
+      abbr_ro : TEXT*3;
+      UNIQUE active;
+    END drainage_system_kind2;
+
+    CLASS simple =
+      id : MANDATORY 0 .. 9999999999;
+    END simple;
+
+    CLASS zone =
+      obj_id : MANDATORY TEXT*16;
+      identifier : TEXT*20;
+      remark : TEXT*80;
+      last_modification : INTERLIS.XMLDateTime;
+      fk_dataowner : TEXT*16;
+      fk_provider : TEXT*16;
+    END zone;
+
+    ASSOCIATION =
+      value_list_base -- {0..*} value_list_base;
+      vsacode -- {1} simple;
+    END;
+
+    ASSOCIATION =
+      drainage_system_kind -- {0..*} drainage_system_kind;
+      vsacode -- {1} simple;
+    END;
+
+    ASSOCIATION =
+      drainage_system_kind2 -- {0..*} drainage_system_kind2;
+      vsacode -- {1} simple;
+    END;
+
+    ASSOCIATION =
+      kind -- {0..*} drainage_system_kind;
+      zone -- {0..*} zone;
+      perimeter_geometry : ISO19107_PLANAS_V1.CurvePolygon3D;
+    END;
+
+  END My_Topic;
+
+END My_Model.
