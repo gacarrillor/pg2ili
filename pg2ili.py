@@ -55,6 +55,7 @@ class PG2ILI:
         "character(n)": "TEXT*n",
         "char(n)": "TEXT*n",
         "text": "TEXT*255",
+        "character varying": "TEXT*255",
         "varchar": "TEXT*255",
         "date": "INTERLIS.XMLDate",
         "timestamp": "INTERLIS.XMLDateTime",
