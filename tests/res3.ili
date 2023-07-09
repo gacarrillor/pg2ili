@@ -3,7 +3,7 @@ INTERLIS 2.3;
 MODEL My_Model (en)
 AT "mailto:gcarrillo@linuxmail.org"
 VERSION "2019-12-11" =
-  IMPORTS ISO19107_PLANAS_V1;
+  IMPORTS ISO19107_PLANAS_V3_0;
 
   TOPIC My_Topic =
 
@@ -60,7 +60,7 @@ VERSION "2019-12-11" =
       subgrupo : TEXT*254;
       perfiles_gp : TEXT*254;
       porcentaje : TEXT*254;
-      geom : ISO19107_PLANAS_V1.GM_MultiSurface3D;
+      geom : ISO19107_PLANAS_V3_0.GM_MultiSurface3D;
     END amazonas;
 
     CLASS aptitud =
@@ -268,7 +268,7 @@ VERSION "2019-12-11" =
       subgrupo : TEXT*254;
       perfiles : TEXT*254;
       porcentaje : TEXT*254;
-      geom : ISO19107_PLANAS_V1.GM_MultiSurface3D;
+      geom : ISO19107_PLANAS_V3_0.GM_MultiSurface3D;
     END gp_antioquia;
 
     CLASS inundacion =

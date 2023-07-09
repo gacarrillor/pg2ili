@@ -23,7 +23,7 @@ import re
 DEBUG = False
 PREFER_3D = True
 USE_SCHEMA_NAME = False  # Add the schema name in output class names
-GEOMETRY_MODEL_NAME = "ISO19107_PLANAS_V1"
+GEOMETRY_MODEL_NAME = "ISO19107_PLANAS_V3_0"
 IGNORE_TABLES = ["t_ili2db_attrname",
                  "t_ili2db_basket",
                  "t_ili2db_classname",
@@ -41,14 +41,9 @@ IGNORE_TABLES = ["t_ili2db_attrname",
 # Primary keys are needed for handling data, so we don't add them to this list
 IGNORE_ATTRIBUTES = ["t_ili_tid"]
 
-INTERMEDIATE_TABLE_DO_NOT_DELETE = ["qgep_od.zone",
-                                    "qgep_od.surface_water_bodies",
-                                    "qgep_od.hydr_geometry",
-                                    "qgep_od.organisation",
-                                    "qgep_od.wastewater_node",
-                                    "qgep_od.aquifier",
-                                    "qgep_od.control_center",
-                                    "qgep_od.river"]
+# Sometimes tables with double 0..* relationships are not really intermediate tables.
+# List them here if you want to preserve them and not be treated as such.
+NOT_AN_INTERMEDIATE_TABLE = []
 
 
 class PG2ILI:
@@ -133,6 +128,7 @@ class PG2ILI:
         self.m_n_associations = list()  # [[foreign_key_def1, foreign_key_def2, [[attr_name, type, NN],...,[]], skip_attribute_names, [unique_attr1, ... unique_attrN]], ..., [...]]
 
         self.sequences = dict()  # To handle (multiple) role names of referenced tables {}
+        self._role_sequence = dict()  # {table: {field: 2}}, to handle multiple repeated roles in referencing tables
 
     def convert(self):
         # Parse file
@@ -210,9 +206,9 @@ class PG2ILI:
         first_chunk = pg_table_sql.split("(")[0] + "("
         result = self.re_create_table.search(first_chunk)
 
-        if self.ignore_table(result.group(1).strip()):
-            return
         class_name = self.normalize_class_name(result.group(1).strip())
+        if self.ignore_table(class_name):
+            return
 
         pg_table_sql = pg_table_sql[len(first_chunk)+1:]
         attributes = list()
@@ -230,13 +226,13 @@ class PG2ILI:
                 continue
 
             # Check for fields
-            field_name = line.split(" ")[0]
+            field_name_original = line.split(" ")[0]
+            field_name = self.normalize_attr_name(field_name_original)
             if field_name in IGNORE_ATTRIBUTES:
                 continue
 
-            line = line[len(field_name)+1:]  # Preserve the rest
+            line = line[len(field_name_original)+1:]  # Preserve the rest
             ili_type = ""
-            field_name = self.normalize_attr_name(field_name)
             for k,v in self.PG_TYPES_COMPILED.items():
                 result = k.search(line)
                 if result:
@@ -281,9 +277,9 @@ class PG2ILI:
     def parse_pg_primary_key_constraint(self, pg_unique_sql, groups):
         if DEBUG: print("\n[parse_pg_primary_key_constraint]", pg_unique_sql)
 
-        if self.ignore_table(groups[0]):
-            return
         class_name = self.normalize_class_name(groups[0])
+        if self.ignore_table(class_name):
+            return
 
         primary_key_attrs = [self.normalize_attr_name(attr_name) for attr_name in groups[1].split(",") if not attr_name.strip() in IGNORE_ATTRIBUTES]
 
@@ -292,9 +288,9 @@ class PG2ILI:
     def parse_pg_foreign_key_constraint(self, pg_unique_sql, groups):
         if DEBUG: print("\n[parse_pg_foreign_key_constraint]", pg_unique_sql)
 
-        if self.ignore_table(groups[0]):
-            return
         class_name = self.normalize_class_name(groups[0])  # Referencing table
+        if self.ignore_table(class_name):
+            return
 
         referencing_attrs = [attr_name.strip() for attr_name in groups[1].split(",")]
         for attr in referencing_attrs:
@@ -325,9 +321,9 @@ class PG2ILI:
     def parse_pg_unique_constraint(self, pg_unique_sql, groups):
         if DEBUG: print("\n[parse_pg_unique_constraint]", pg_unique_sql)
 
-        if self.ignore_table(groups[0]):
-            return
         class_name = self.normalize_class_name(groups[0])
+        if self.ignore_table(class_name):
+            return
 
         unique_attrs = [self.normalize_attr_name(attr_name) for attr_name in groups[1].split(",") if not attr_name.strip() in IGNORE_ATTRIBUTES]
 
@@ -445,12 +441,12 @@ END {}.
         referencing_table = class_name
         referencing_fields, referenced_table, referenced_fields, referencing_cardinality, referenced_cardinality = foreign_key_def
 
-        # role_referencing_next_id = self.get_next_id_sequence(referencing_table)
         role_referencing_next_id = 0
         ili_association += "\n      {} -- {{{}}} {};".format("{}{}".format(referencing_table, "_{}".format(role_referencing_next_id) if role_referencing_next_id else ""),  # Role
                                                              referencing_cardinality,
                                                              referencing_table)  # Class
-        ili_association += "\n      {} -- {{{}}} {};".format(referencing_fields[0],  # Role
+        role_referenced_next_id = self.get_next_id_role_sequence(referencing_table, referencing_fields[0])
+        ili_association += "\n      {} -- {{{}}} {};".format("{}{}".format(referencing_fields[0], "_{}".format(role_referenced_next_id) if role_referenced_next_id else ""),  # Role
                                                              referenced_cardinality,
                                                              referenced_table)  # Class
 
@@ -478,13 +474,16 @@ END {}.
     def identify_m_n_relationships(self):
         classes_to_remove = list()
         for class_name, foreign_key_defs in self.pg_foreign_keys.items():
+            if class_name in NOT_AN_INTERMEDIATE_TABLE:
+                continue
+
             if len(foreign_key_defs) == 2:
                 one_many_count = 0
                 for foreign_key_def in foreign_key_defs:
                     if foreign_key_def[3].endswith("..*"):  # Check cardinality
                         one_many_count += 1
 
-                if one_many_count == 2: # M:N!!!
+                if one_many_count == 2: # Potential M:N!!!
                     # Store and expand extra attrs from current class to transfer them to M:N relationship
                     attrs = self.pg_tables[class_name]
                     skip_attribute_names = list()
@@ -511,18 +510,14 @@ END {}.
                     # Add relationship to M:N list
                     self.m_n_associations.append([foreign_key_defs, attrs, skip_attribute_names, uniques_to_store])
 
-        do_not_delete_intermediate_table = list()
-        for table in INTERMEDIATE_TABLE_DO_NOT_DELETE:
-            do_not_delete_intermediate_table.append(self.normalize_class_name(table))
-
+        if DEBUG: print("\n[identify_m_n_relationships] Classes to remove:", classes_to_remove)
         for class_name in classes_to_remove:
-            if not class_name in do_not_delete_intermediate_table:
-                # Remove intermediate class from all other dicts
-                if class_name in self.pg_tables: del self.pg_tables[class_name]
-                if class_name in self.pg_not_nulls: del self.pg_not_nulls[class_name]
-                if class_name in self.pg_uniques: del self.pg_uniques[class_name]
-                if class_name in self.pg_primary_keys: del self.pg_primary_keys[class_name]
-                if class_name in self.pg_foreign_keys: del self.pg_foreign_keys[class_name]
+            # Remove intermediate class from all other dicts
+            if class_name in self.pg_tables: del self.pg_tables[class_name]
+            if class_name in self.pg_not_nulls: del self.pg_not_nulls[class_name]
+            if class_name in self.pg_uniques: del self.pg_uniques[class_name]
+            if class_name in self.pg_primary_keys: del self.pg_primary_keys[class_name]
+            if class_name in self.pg_foreign_keys: del self.pg_foreign_keys[class_name]
 
     def get_ili_m_n_association(self, m_n_rel_def):
         if DEBUG: print("\n[get_ili_m_n_association]", m_n_rel_def)
@@ -622,11 +617,11 @@ END {}.
 
 
     def normalize_class_name(self, name):
+        name = name.replace("\"", "")
         parts = name.split(".")
         if len(parts) == 2 and not USE_SCHEMA_NAME:
             return parts[1].strip()
 
-        name = name.replace("\"", "")
         return name.replace(".", "_").strip()
 
     def normalize_attr_name(self, name):
@@ -652,6 +647,19 @@ END {}.
 
         return self.sequences[key]
 
+    def get_next_id_role_sequence(self, table, field):
+        # Sometimes there are tables pointing to other tables and using the same field.
+        # While this might be possible in SQL, we need several fields for that
+        # in INTERLIS (one field per association). So to translate such associations to
+        # INTERLIS terms, we append a suffix to subsequent fields.
+        if table in self._role_sequence and field in self._role_sequence[table]:
+            self._role_sequence[table][field] += 1
+        elif table in self._role_sequence and field not in self._role_sequence[table]:
+            self._role_sequence[table][field] = 0
+        else:
+            self._role_sequence[table] = {field: 0}
+
+        return self._role_sequence[table][field]
 
 if __name__ == "__main__":
     sql_file = sys.argv[1]
