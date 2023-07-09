@@ -22,3 +22,7 @@ See the `tests/` folder for input and output examples.
 **Unit tests:**
 
 To run the unit tests, open the project in PyCharm, open `tests.py` file and press `Ctrl + Shift + F10`.
+
+Individual tests can be run by typing this in a console (from repo folder):
+
+    python3 -m unittest tests.tests.TestPG2ILI.test_sql13    
